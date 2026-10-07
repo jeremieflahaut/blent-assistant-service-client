@@ -1,0 +1,15 @@
+# Environnement
+.venv/
+__pycache__/
+*.py[cod]
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Secrets
+.env
+
+# Outils
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/

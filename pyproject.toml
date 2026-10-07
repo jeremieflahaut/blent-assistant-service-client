@@ -1,0 +1,7 @@
+[project]
+name = "blent-assistant-service-client"
+version = "0.1.0"
+description = "Assistant de chat service client e-commerce (LangChain, LLM open-weights, SQLite)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
