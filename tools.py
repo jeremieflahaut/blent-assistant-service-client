@@ -1,4 +1,4 @@
-import sqlite3
+from db import get_connection
 
 
 def get_customer_orders_and_address(user_id: int) -> dict:
@@ -8,7 +8,7 @@ def get_customer_orders_and_address(user_id: int) -> dict:
     est vide si le client n'a passé aucune commande.
     """
 
-    conn = sqlite3.connect("file:data/orders.db?mode=ro", uri=True)
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
         """
