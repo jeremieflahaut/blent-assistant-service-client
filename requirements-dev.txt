@@ -5,6 +5,8 @@ cfgv==3.5.0
     # via pre-commit
 click==8.5.0
     # via black
+colorama==0.4.6 ; sys_platform == 'win32'
+    # via pytest
 distlib==0.4.3
     # via virtualenv
 filelock==4.0.12
@@ -14,6 +16,8 @@ filelock==4.0.12
 flake8==7.4.1
 identify==2.6.20
     # via pre-commit
+iniconfig==2.3.1
+    # via pytest
 mccabe==0.7.0
     # via flake8
 mypy-extensions==1.1.0
@@ -23,6 +27,7 @@ nodeenv==1.11.0
 packaging==26.3
     # via
     #   black
+    #   pytest
     #   virtualenv
 pathspec==1.1.1
     # via black
@@ -30,11 +35,16 @@ platformdirs==4.12.4
     # via
     #   black
     #   virtualenv
+pluggy==1.6.0
+    # via pytest
 pre-commit==4.6.2
 pycodestyle==2.15.0
     # via flake8
 pyflakes==4.0.3
     # via flake8
+pygments==2.21.0
+    # via pytest
+pytest==9.1.1
 python-discovery==1.6.1
     # via virtualenv
 pytokens==0.4.1

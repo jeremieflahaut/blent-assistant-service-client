@@ -25,3 +25,6 @@ jobs:
 
       - name: Lint (flake8)
         run: uv run flake8 .
+
+      - name: Run tests (pytest)
+        run: uv run pytest
