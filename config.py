@@ -12,3 +12,8 @@ def get_today() -> date:
     if simulated:
         return date.fromisoformat(simulated)
     return date.today()
+
+
+def get_model_name() -> str:
+    """Modèle servi par Ollama, choisi dans le .env (OLLAMA_MODEL)."""
+    return os.environ["OLLAMA_MODEL"]

@@ -1,6 +1,6 @@
 from datetime import date
 
-from config import get_today
+from config import get_model_name, get_today
 
 
 def test_simulated_date(monkeypatch):
@@ -19,3 +19,9 @@ def test_real_date_when_variable_is_empty(monkeypatch):
     monkeypatch.setenv("SIMULATED_TODAY", "")
 
     assert get_today() == date.today()
+
+
+def test_model_name_from_env(monkeypatch):
+    monkeypatch.setenv("OLLAMA_MODEL", "ministral-3:3b")
+
+    assert get_model_name() == "ministral-3:3b"
