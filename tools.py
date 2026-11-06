@@ -3,13 +3,29 @@ from datetime import date
 from config import get_today
 from db import get_connection
 
+MONTHS = [
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre",
+]
+
 
 def get_customer_orders_and_address(user_id: int) -> dict:
     """Renvoie l'adresse actuelle du client connecté et toutes ses commandes.
 
     Les commandes sont triées de la plus récente à la plus ancienne. La liste
-    est vide si le client n'a passé aucune commande. Les durées (days_since_*) sont
-    calculées ici, à partir de la date du jour, pour que le LLM n'ait rien à calculer.
+    est vide si le client n'a passé aucune commande. Les dates sont écrites en toutes
+    lettres, sans l'heure, et les durées (days_since_*) calculées ici à partir de la
+    date du jour : le LLM n'a ni date à mettre en forme ni calcul à faire.
     """
 
     conn = get_connection()
@@ -41,9 +57,9 @@ def get_customer_orders_and_address(user_id: int) -> dict:
         order_dict = {
             "order_id": order[0],
             "status": order[1],
-            "date_purchase": order[2],
-            "date_shipped": order[3],
-            "date_delivered": order[4],
+            "date_purchase": french_date(order[2]),
+            "date_shipped": french_date(order[3]),
+            "date_delivered": french_date(order[4]),
             "days_since_purchase": days_since(order[2], today),
             "days_since_shipped": days_since(order[3], today),
             "days_since_delivered": days_since(order[4], today),
@@ -58,3 +74,12 @@ def days_since(timestamp: str | None, today: date) -> int | None:
     if timestamp is None:
         return None
     return (today - date.fromisoformat(timestamp[:10])).days
+
+
+def french_date(timestamp: str | None) -> str | None:
+    """Date de la base (« 2024-05-18 20:47:48 ») en français : « 18 mai 2024 »."""
+    if timestamp is None:
+        return None
+    day = date.fromisoformat(timestamp[:10])
+    day_label = "1er" if day.day == 1 else str(day.day)
+    return f"{day_label} {MONTHS[day.month - 1]} {day.year}"

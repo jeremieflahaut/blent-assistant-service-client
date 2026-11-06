@@ -3,7 +3,7 @@ import sqlite3
 import pytest
 
 import tools
-from tools import get_customer_orders_and_address
+from tools import french_date, get_customer_orders_and_address
 
 # Clients de la base de test (tests/conftest.py)
 CUSTOMER_WITH_ORDERS = 1
@@ -23,7 +23,7 @@ def test_returns_address_and_orders(monkeypatch):
     assert result["orders"][0] == {
         "order_id": 12,
         "status": "invoiced",
-        "date_purchase": "2024-05-30 10:53:38",
+        "date_purchase": "30 mai 2024",
         "date_shipped": None,
         "date_delivered": None,
         "days_since_purchase": 2,
@@ -75,6 +75,12 @@ def test_days_since_each_date(monkeypatch):
     assert order["days_since_purchase"] == 26
     assert order["days_since_shipped"] == 24
     assert order["days_since_delivered"] == 10
+
+
+def test_french_date():
+    assert french_date("2024-05-18 20:47:48") == "18 mai 2024"
+    assert french_date("2024-06-01 08:00:00") == "1er juin 2024"
+    assert french_date(None) is None
 
 
 class FailingConnection:
