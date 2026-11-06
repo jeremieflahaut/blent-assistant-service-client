@@ -11,7 +11,8 @@ CUSTOMER_WITH_SHORT_ZIP_CODE = 2
 CUSTOMER_WITHOUT_ORDER = 3
 
 
-def test_returns_address_and_orders():
+def test_returns_address_and_orders(monkeypatch):
+    monkeypatch.setenv("SIMULATED_TODAY", "2024-06-01")
     result = get_customer_orders_and_address(CUSTOMER_WITH_ORDERS)
 
     assert result["address"] == {
@@ -25,6 +26,9 @@ def test_returns_address_and_orders():
         "date_purchase": "2024-05-30 10:53:38",
         "date_shipped": None,
         "date_delivered": None,
+        "days_since_purchase": 2,
+        "days_since_shipped": None,
+        "days_since_delivered": None,
     }
 
 
@@ -60,6 +64,17 @@ def test_no_internal_identifier_returned():
     for order in result["orders"]:
         assert "user_id" not in order
         assert "index" not in order
+
+
+def test_days_since_each_date(monkeypatch):
+    # Commande 10 : achat le 6 mai, expédition le 8 mai, livraison le 22 mai 2024
+    monkeypatch.setenv("SIMULATED_TODAY", "2024-06-01")
+    result = get_customer_orders_and_address(CUSTOMER_WITH_ORDERS)
+
+    order = next(order for order in result["orders"] if order["order_id"] == 10)
+    assert order["days_since_purchase"] == 26
+    assert order["days_since_shipped"] == 24
+    assert order["days_since_delivered"] == 10
 
 
 class FailingConnection:
