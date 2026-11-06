@@ -7,11 +7,13 @@ relire.
 
 Prérequis : serveur Ollama démarré, modèle téléchargé (OLLAMA_MODEL dans le .env).
 Depuis la racine du dépôt :
-    uv run python -m tests.eval.essai_prompt
+    uv run python -m tests.eval.essai_prompt          # tous les cas
+    uv run python -m tests.eval.essai_prompt 18 19    # seulement les cas 18 et 19
 """
 
 import json
 import re
+import sys
 import time
 from datetime import date, datetime
 from pathlib import Path
@@ -80,7 +82,12 @@ def write_report(path: Path, today: date, rows: list) -> None:
 
 def main() -> None:
     data = json.loads((EVAL_DIR / "cas.json").read_text(encoding="utf-8"))
-    cases = [case for case in data["cas"] if len(case["messages"]) == 1]
+    selected = {int(arg) for arg in sys.argv[1:]}
+    cases = [
+        case
+        for case in data["cas"]
+        if len(case["messages"]) == 1 and (not selected or case["id"] in selected)
+    ]
     customers = {customer["user_id"]: customer for customer in list_customers()}
     today = get_today()
     print(f"Modèle : {get_model_name()} · date du jour : {today} · {len(cases)} cas")
