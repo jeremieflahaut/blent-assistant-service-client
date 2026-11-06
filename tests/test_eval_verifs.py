@@ -41,11 +41,24 @@ C4_DATES = {
     "5 mai",
     "20 mai",
 } | TODAY
+# Nombres présents dans les données des mêmes clients (sortie de l'outil au 1er juin
+# 2024 : numéros de commande, jours, années, durées, adresse), + le nombre de commandes
+C1_NUMBERS = set(
+    "1 2 5 6 7 8 9 12 13 14 16 18 19 20 22 23 24 25 26 30 34 37 42 51 274 2024 3674 "
+    "44466".split()
+)
+C2_NUMBERS = {"0", "1", "2024", "427", "8389", "46764"}
+C4_NUMBERS = set(
+    "1 5 6 8 9 10 12 13 14 19 20 22 23 24 26 27 31 60 66 70 93 338 2024 5655 "
+    "65631".split()
+)
+NUMBERS = {id(C1_DATES): C1_NUMBERS, id(C2_DATES): C2_NUMBERS, id(C4_DATES): C4_NUMBERS}
 TOOL = ["get_customer_orders_and_address({})"]
 
 
 def failures(case_id, answer, known_dates, tool_calls=TOOL):
-    return check(CASES[case_id], answer, tool_calls, FORBIDDEN, known_dates)
+    numbers = NUMBERS[id(known_dates)]
+    return check(CASES[case_id], answer, tool_calls, FORBIDDEN, known_dates, numbers)
 
 
 def test_dates_in_handles_first_of_month():
@@ -146,3 +159,58 @@ def test_case_4_wrong_order_fails():
         "26 mai. 25 mai : expédiée le 26 mai. 30 mai : en attente."
     )
     assert "ordre incorrect" in failures(4, answer, C1_DATES)
+
+
+# Réponses du 24b (tests/eval/resultats/essai-agent-20261106-1615.md)
+
+
+def test_case_11_invented_tracking_number_fails():
+    for answer in (
+        "Votre commande 42 a été expédiée le 26 mai 2024. Son numéro de suivi est "
+        "940ANXF936.",
+        "La commande 42 a été expédiée le 26 mai 2024. Son numéro de suivi est "
+        "512-58492-424269.",
+    ):
+        assert failures(11, answer, C1_DATES)
+
+
+def test_case_11_unavailable_tracking_number_passes():
+    answer = (
+        "Je ne peux pas vous communiquer le numéro de suivi de votre commande **42**. "
+        "Elle a bien été expédiée le **26 mai 2024**, mais ce numéro n'est pas "
+        "disponible ici."
+    )
+    assert failures(11, answer, C1_DATES) == []
+
+
+def test_case_4_answer_by_order_numbers_passes():
+    answer = (
+        "Votre adresse actuelle est 274-3674 Et Ave, Moulins, 44466.\n\n"
+        "- Commande 22 : validée et payée le 30 mai 2024, en attente d'expédition.\n"
+        "- Commande 37 : expédiée le 26 mai 2024, pas encore livrée.\n"
+        "- Commande 42 : expédiée le 26 mai 2024, pas encore livrée.\n"
+        "- Commande 34 : expédiée le 16 mai 2024, pas encore livrée.\n"
+        "- Commande 51 : livrée le 18 mai 2024."
+    )
+    assert failures(4, answer, C1_DATES) == []
+
+
+def test_case_4_answer_by_dates_and_durations_passes():
+    answer = (
+        "Ashton Frederick, vous avez cinq commandes.\n\n"
+        "La première a été validée et payée le 30 mai 2024, il y a 2 jours.\n"
+        "La deuxième a été validée et payée le 25 mai 2024, il y a 7 jours. Elle a été "
+        "expédiée le 26 mai 2024, il y a 6 jours.\n"
+        "La troisième a été validée et payée le 24 mai 2024, il y a 8 jours.\n"
+        "La quatrième a été validée et payée le 13 mai 2024, il y a 19 jours. Elle a "
+        "été expédiée le 16 mai 2024, il y a 16 jours.\n"
+        "La cinquième a été validée et payée le 9 mai 2024, il y a 23 jours. "
+        "Elle a été expédiée le 12 mai 2024, il y a 20 jours. "
+        "Elle a été livrée le 18 mai 2024, il y a 14 jours."
+    )
+    assert failures(4, answer, C1_DATES) == []
+
+
+def test_case_13_number_from_question_passes():
+    answer = "La commande 999 est introuvable dans votre compte."
+    assert failures(13, answer, C1_DATES) == []

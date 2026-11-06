@@ -28,7 +28,7 @@ from agent import Context, build_agent
 from config import get_model_name, get_today
 from customers import list_customers
 from llm import GENERATION, build_model
-from tests.eval.verifs import check, dates_in
+from tests.eval.verifs import check, dates_in, numbers_in
 from tools import french_date, get_customer_orders_and_address
 
 EVAL_DIR = Path(__file__).parent
@@ -58,16 +58,14 @@ def run_case(model, customer: dict, question: str, today: date) -> dict:
     }
 
 
-def known_dates(user_id: int, today: date) -> set[str]:
-    """Dates que le bot a le droit de citer : celles du client, et la date du jour."""
-    orders = get_customer_orders_and_address(user_id)["orders"]
-    texts = [
-        order[key] or ""
-        for order in orders
-        for key in ("date_purchase", "date_shipped", "date_delivered")
-    ]
-    texts.append(french_date(today.isoformat()))
-    return dates_in(" ".join(texts))
+def known_facts(user_id: int, today: date) -> tuple[set[str], set[str]]:
+    """Dates et nombres que le bot a le droit de citer : ceux des données du client
+    (commandes, durées, adresse), le nombre de ses commandes et la date du jour."""
+    result = get_customer_orders_and_address(user_id)
+    facts = (
+        json.dumps(result, ensure_ascii=False) + " " + french_date(today.isoformat())
+    )
+    return dates_in(facts), numbers_in(facts) | {str(len(result["orders"]))}
 
 
 def write_report(path: Path, today: date, repeat: int, rows: list) -> None:
@@ -152,7 +150,7 @@ def main() -> None:
     rows = []
     for case in cases:
         customer = customers[data["clients"][case["client"]]["user_id"]]
-        allowed = known_dates(customer["user_id"], today)
+        dates, numbers = known_facts(customer["user_id"], today)
         runs = []
         for model in models:
             run = run_case(model, customer, case["messages"][0], today)
@@ -161,7 +159,8 @@ def main() -> None:
                 run["answer"],
                 run["tool_calls"],
                 data["interdits_globaux"],
-                allowed,
+                dates,
+                numbers,
             )
             runs.append(run)
         rows.append((case, runs))

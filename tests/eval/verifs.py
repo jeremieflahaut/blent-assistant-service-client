@@ -1,8 +1,9 @@
 """Vérifications automatiques d'une réponse du bot (sans appel au modèle).
 
 Une réponse échoue si l'une des vérifications de son cas (cas.json, clé « verifs »)
-ou l'un des interdits globaux n'est pas respecté. Le ton n'est pas noté : les points
-« a_relire » restent à juger à la main.
+ou l'un des interdits globaux n'est pas respecté, ou si elle cite une date ou un nombre
+absent des données du client et de sa question (donnée inventée). Le ton n'est pas
+noté : les points « a_relire » restent à juger à la main.
 """
 
 import re
@@ -34,12 +35,18 @@ def dates_in(text: str) -> set[str]:
     }
 
 
+def numbers_in(text: str) -> set[str]:
+    """Nombres cités dans un texte, sans zéros initiaux : « 06843 » devient « 6843 »."""
+    return {str(int(number)) for number in re.findall(r"\d+", normalize(text))}
+
+
 def check(
     case: dict,
     answer: str,
     tool_calls: list,
     forbidden: list[str],
     known_dates: set[str],
+    known_numbers: set[str],
 ) -> list[str]:
     """Liste des vérifications échouées ; vide si la réponse passe."""
     if answer.startswith("ERREUR"):
@@ -62,12 +69,23 @@ def check(
         if find(text, term) >= 0:
             failures.append(f"contient : {term}")
 
-    positions = [find(text, term) for term in verifs.get("dans_l_ordre", [])]
+    # Chaque élément de « dans_l_ordre » est une liste de formulations équivalentes
+    positions = []
+    for alternatives in verifs.get("dans_l_ordre", []):
+        found = [find(text, term) for term in alternatives if find(text, term) >= 0]
+        positions.append(min(found) if found else -1)
     if all(position >= 0 for position in positions) and positions != sorted(positions):
         failures.append("ordre incorrect")
 
     unknown = dates_in(answer) - known_dates
     if unknown:
         failures.append("date absente des données du client : " + ", ".join(unknown))
+
+    allowed = known_numbers | numbers_in(case["messages"][0])
+    unknown = numbers_in(answer) - allowed
+    if unknown:
+        failures.append(
+            "nombre absent des données du client : " + ", ".join(sorted(unknown))
+        )
 
     return failures

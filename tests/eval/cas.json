@@ -148,27 +148,47 @@
         "outil": "obligatoire",
         "doit_contenir": [
           [
+            "22",
             "30 mai"
           ],
           [
+            "37",
             "25 mai"
           ],
           [
+            "42",
             "24 mai"
           ],
           [
+            "34",
             "13 mai"
           ],
           [
+            "51",
             "9 mai"
           ]
         ],
         "dans_l_ordre": [
-          "30 mai",
-          "25 mai",
-          "24 mai",
-          "13 mai",
-          "9 mai"
+          [
+            "22",
+            "30 mai"
+          ],
+          [
+            "37",
+            "25 mai"
+          ],
+          [
+            "42",
+            "24 mai"
+          ],
+          [
+            "34",
+            "13 mai"
+          ],
+          [
+            "51",
+            "9 mai"
+          ]
         ],
         "ne_doit_pas_contenir": [
           "quelques jours",
@@ -339,11 +359,23 @@
       "verifs": {
         "outil": "obligatoire",
         "ne_doit_pas_contenir": [
+          "numéro de suivi est",
           "colissimo",
           "chronopost",
           "dhl",
           "la poste",
           "mondial relay"
+        ],
+        "doit_contenir": [
+          [
+            "pas disponible",
+            "ne connais pas",
+            "ne dispose pas",
+            "n'ai pas",
+            "pas accès",
+            "ne peux pas vous communiquer",
+            "ne trouve pas de numéro"
+          ]
         ]
       }
     },
