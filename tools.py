@@ -9,22 +9,24 @@ def get_customer_orders_and_address(user_id: int) -> dict:
     """
 
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        SELECT order_id, status, date_purchase, date_shipped, date_delivered
-        FROM orders
-        WHERE user_id = ?
-        ORDER BY date_purchase DESC
-        """,
-        (user_id,),
-    )
-    orders = cursor.fetchall()
-    cursor.execute(
-        "SELECT address, city, zip_code FROM users WHERE user_id = ?", (user_id,)
-    )
-    user = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT order_id, status, date_purchase, date_shipped, date_delivered
+            FROM orders
+            WHERE user_id = ?
+            ORDER BY date_purchase DESC
+            """,
+            (user_id,),
+        )
+        orders = cursor.fetchall()
+        cursor.execute(
+            "SELECT address, city, zip_code FROM users WHERE user_id = ?", (user_id,)
+        )
+        user = cursor.fetchone()
+    finally:
+        conn.close()
 
     address = {"address": user[0], "city": user[1], "zip_code": str(user[2]).zfill(5)}
 

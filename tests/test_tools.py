@@ -1,3 +1,8 @@
+import sqlite3
+
+import pytest
+
+import tools
 from tools import get_customer_orders_and_address
 
 # Clients de la base de test (tests/conftest.py)
@@ -55,3 +60,28 @@ def test_no_internal_identifier_returned():
     for order in result["orders"]:
         assert "user_id" not in order
         assert "index" not in order
+
+
+class FailingConnection:
+    """Connexion dont toute requête échoue, et qui note si elle a été fermée."""
+
+    closed = False
+
+    def cursor(self):
+        return self
+
+    def execute(self, *args):
+        raise sqlite3.OperationalError("database is locked")
+
+    def close(self):
+        self.closed = True
+
+
+def test_connection_closed_when_query_fails(monkeypatch):
+    conn = FailingConnection()
+    monkeypatch.setattr(tools, "get_connection", lambda: conn)
+
+    with pytest.raises(sqlite3.OperationalError):
+        get_customer_orders_and_address(CUSTOMER_WITH_ORDERS)
+
+    assert conn.closed
