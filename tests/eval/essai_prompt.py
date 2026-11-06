@@ -1,19 +1,23 @@
 """Essai de l'agent complet sur le jeu de test, avec le modèle servi par Ollama.
 
 Pour chaque cas à un seul message de cas.json, l'agent reçoit la question du client et
-décide lui-même d'appeler l'outil ou non. Les appels d'outil, les réponses et les
-erreurs éventuelles sont écrits dans un rapport Markdown (tests/eval/resultats/) à
-relire.
+décide lui-même d'appeler l'outil ou non. Chaque réponse passe les vérifications
+automatiques du cas (tests/eval/verifs.py) ; le rapport Markdown (tests/eval/resultats/)
+donne le score, puis le détail des réponses à relire.
+
+Même à température 0.05, une même question donne des réponses différentes d'un appel à
+l'autre : --repeat joue chaque cas plusieurs fois (graine 1, 2, …) pour distinguer un
+défaut régulier d'un accident.
 
 Prérequis : serveur Ollama démarré, modèle téléchargé (OLLAMA_MODEL dans le .env).
 Depuis la racine du dépôt :
-    uv run python -m tests.eval.essai_prompt          # tous les cas
-    uv run python -m tests.eval.essai_prompt 18 19    # seulement les cas 18 et 19
+    uv run python -m tests.eval.essai_prompt                # tous les cas, une fois
+    uv run python -m tests.eval.essai_prompt --repeat 3     # tous les cas, trois fois
+    uv run python -m tests.eval.essai_prompt 18 19          # seulement les cas 18 et 19
 """
 
+import argparse
 import json
-import re
-import sys
 import time
 from datetime import date, datetime
 from pathlib import Path
@@ -24,9 +28,10 @@ from agent import Context, build_agent
 from config import get_model_name, get_today
 from customers import list_customers
 from llm import GENERATION, build_model
+from tests.eval.verifs import check, dates_in
+from tools import french_date, get_customer_orders_and_address
 
 EVAL_DIR = Path(__file__).parent
-RAW_STATUS = re.compile(r"\b(invoiced|shipped|delivered)\b", re.IGNORECASE)
 
 
 def run_case(model, customer: dict, question: str, today: date) -> dict:
@@ -53,15 +58,50 @@ def run_case(model, customer: dict, question: str, today: date) -> dict:
     }
 
 
-def write_report(path: Path, today: date, rows: list) -> None:
+def known_dates(user_id: int, today: date) -> set[str]:
+    """Dates que le bot a le droit de citer : celles du client, et la date du jour."""
+    orders = get_customer_orders_and_address(user_id)["orders"]
+    texts = [
+        order[key] or ""
+        for order in orders
+        for key in ("date_purchase", "date_shipped", "date_delivered")
+    ]
+    texts.append(french_date(today.isoformat()))
+    return dates_in(" ".join(texts))
+
+
+def write_report(path: Path, today: date, repeat: int, rows: list) -> None:
     lines = [
         f"# Essai de l'agent — {datetime.now():%Y-%m-%d %H:%M}",
         "",
         f"Modèle : `{get_model_name()}` (Ollama) · date du jour : {today} · "
-        f"réglages : `{GENERATION}`",
+        f"réglages : `{GENERATION}` · répétitions : {repeat} (graines 1 à {repeat})",
+        "",
+        "## Score",
         "",
     ]
-    for case, run in rows:
+    for index in range(repeat):
+        passed = sum(
+            not runs[index]["failures"] for _, runs in rows if index < len(runs)
+        )
+        lines.append(f"- Répétition {index + 1} : **{passed}/{len(rows)}**")
+    lines += [
+        "",
+        "Cas à plusieurs messages (29, 30) : non joués par ce script. Le ton n'est pas "
+        "noté : voir les points « À relire ».",
+        "",
+        "| Cas | Réussites | Échecs relevés |",
+        "|---|---|---|",
+    ]
+    for case, runs in rows:
+        passed = sum(not run["failures"] for run in runs)
+        failures = sorted({failure for run in runs for failure in run["failures"]})
+        lines.append(
+            f"| {case['id']} | {passed}/{len(runs)} | {' ; '.join(failures)} |"
+        )
+    lines.append("")
+
+    for case, runs in rows:
         lines += [
             f"## Cas {case['id']} — {case['etape']} ({case['client']})",
             "",
@@ -70,40 +110,68 @@ def write_report(path: Path, today: date, rows: list) -> None:
             "**Attendu** : " + " ; ".join(case["attendu"]),
             "",
         ]
-        calls = ", ".join(run["tool_calls"]) or "aucun"
-        flag = " · ⚠️ code brut de statut" if RAW_STATUS.search(run["answer"]) else ""
-        lines += [
-            f"**Réponse** ({run['duration']:.1f} s) · appels d'outil : {calls}{flag}",
-            "",
-        ]
-        lines += ["> " + line for line in run["answer"].splitlines()] + [""]
+        if "a_relire" in case.get("verifs", {}):
+            lines += [f"**À relire** : {case['verifs']['a_relire']}", ""]
+        for index, run in enumerate(runs, start=1):
+            verdict = (
+                "✅" if not run["failures"] else "❌ " + " ; ".join(run["failures"])
+            )
+            calls = ", ".join(run["tool_calls"]) or "aucun"
+            lines += [
+                f"**Répétition {index}** ({run['duration']:.1f} s) · appels d'outil : "
+                f"{calls} · {verdict}",
+                "",
+            ]
+            lines += ["> " + line for line in run["answer"].splitlines()] + [""]
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("cas", nargs="*", type=int, help="numéros des cas à jouer")
+    parser.add_argument("--repeat", type=int, default=1, help="répétitions par cas")
+    args = parser.parse_args()
+
     data = json.loads((EVAL_DIR / "cas.json").read_text(encoding="utf-8"))
-    selected = {int(arg) for arg in sys.argv[1:]}
     cases = [
         case
         for case in data["cas"]
-        if len(case["messages"]) == 1 and (not selected or case["id"] in selected)
+        if len(case["messages"]) == 1 and (not args.cas or case["id"] in args.cas)
     ]
     customers = {customer["user_id"]: customer for customer in list_customers()}
     today = get_today()
-    print(f"Modèle : {get_model_name()} · date du jour : {today} · {len(cases)} cas")
+    print(
+        f"Modèle : {get_model_name()} · date du jour : {today} · {len(cases)} cas "
+        f"× {args.repeat} répétition(s)"
+    )
 
     path = EVAL_DIR / "resultats" / f"essai-agent-{datetime.now():%Y%m%d-%H%M}.md"
     path.parent.mkdir(exist_ok=True)
 
-    model = build_model()
+    models = [build_model(seed=seed) for seed in range(1, args.repeat + 1)]
     rows = []
     for case in cases:
         customer = customers[data["clients"][case["client"]]["user_id"]]
-        run = run_case(model, customer, case["messages"][0], today)
-        rows.append((case, run))
-        print(f"Cas {case['id']} : {run['duration']:.1f} s · {run['tool_calls']}")
-        write_report(path, today, rows)  # réécrit à chaque cas : rien n'est perdu
+        allowed = known_dates(customer["user_id"], today)
+        runs = []
+        for model in models:
+            run = run_case(model, customer, case["messages"][0], today)
+            run["failures"] = check(
+                case,
+                run["answer"],
+                run["tool_calls"],
+                data["interdits_globaux"],
+                allowed,
+            )
+            runs.append(run)
+        rows.append((case, runs))
+        passed = sum(not run["failures"] for run in runs)
+        print(f"Cas {case['id']} : {passed}/{len(runs)} réussite(s)")
+        write_report(path, today, args.repeat, rows)  # réécrit à chaque cas
 
+    for index in range(args.repeat):
+        passed = sum(not runs[index]["failures"] for _, runs in rows)
+        print(f"Score, répétition {index + 1} : {passed}/{len(rows)}")
     print(f"Rapport : {path}")
 
 
