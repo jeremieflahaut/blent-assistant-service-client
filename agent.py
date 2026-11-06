@@ -7,7 +7,7 @@ from langchain.tools import ToolRuntime, tool
 from langchain_core.language_models import BaseChatModel
 
 from prompts import build_system_prompt
-from tools import get_customer_orders_and_address
+from tools import get_customer_orders
 
 
 @dataclass
@@ -17,10 +17,10 @@ class Context:
     user_id: int
 
 
-@tool("get_customer_orders_and_address")
+@tool("get_customer_orders")
 def customer_orders_tool(runtime: ToolRuntime[Context]) -> str:
-    """Renvoie l'adresse actuelle du client connecté et toutes ses commandes."""
-    result = get_customer_orders_and_address(runtime.context.user_id)
+    """Renvoie toutes les commandes du client connecté."""
+    result = get_customer_orders(runtime.context.user_id)
     return json.dumps(result, ensure_ascii=False)
 
 

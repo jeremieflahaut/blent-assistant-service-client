@@ -20,7 +20,7 @@ class FakeToolModel(GenericFakeChatModel):
         return self
 
 
-def run_tool_call(tool_args: dict, user_id: int) -> dict:
+def run_tool_call(tool_args: dict, user_id: int) -> list:
     """Fait appeler l'outil par le faux modèle et renvoie la réponse de l'outil."""
     tool_call = {"name": customer_orders_tool.name, "args": tool_args, "id": "call_1"}
     model = FakeToolModel(
@@ -49,11 +49,11 @@ def test_model_sees_no_tool_parameter():
 def test_tool_reads_session_customer():
     result = run_tool_call({}, CUSTOMER_WITH_ORDERS)
 
-    assert [order["order_id"] for order in result["orders"]] == [12, 13, 10]
+    assert [order["order_id"] for order in result] == [12, 13, 10]
 
 
 def test_tool_ignores_user_id_sent_by_model():
     # Injection : le modèle tente de lire les commandes d'un autre client
     result = run_tool_call({"user_id": OTHER_CUSTOMER}, CUSTOMER_WITH_ORDERS)
 
-    assert [order["order_id"] for order in result["orders"]] == [12, 13, 10]
+    assert [order["order_id"] for order in result] == [12, 13, 10]

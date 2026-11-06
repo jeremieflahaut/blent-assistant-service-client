@@ -19,19 +19,18 @@ MONTHS = [
 ]
 
 
-def get_customer_orders_and_address(user_id: int) -> dict:
-    """Renvoie l'adresse actuelle du client connecté et toutes ses commandes.
+def get_customer_orders(user_id: int) -> list[dict]:
+    """Renvoie toutes les commandes du client connecté.
 
-    Les commandes sont triées de la plus récente à la plus ancienne. La liste
-    est vide si le client n'a passé aucune commande. Les dates sont écrites en toutes
-    lettres, sans l'heure, et les durées (days_since_*) calculées ici à partir de la
-    date du jour : le LLM n'a ni date à mettre en forme ni calcul à faire.
+    Les commandes sont triées de la plus récente à la plus ancienne. La liste est vide
+    si le client n'a passé aucune commande. Les dates sont écrites en toutes lettres,
+    sans l'heure, et les durées (days_since_*) calculées ici à partir de la date du
+    jour : le LLM n'a ni date à mettre en forme ni calcul à faire.
     """
 
     conn = get_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute(
+        orders = conn.execute(
             """
             SELECT order_id, status, date_purchase, date_shipped, date_delivered
             FROM orders
@@ -39,22 +38,13 @@ def get_customer_orders_and_address(user_id: int) -> dict:
             ORDER BY date_purchase DESC
             """,
             (user_id,),
-        )
-        orders = cursor.fetchall()
-        cursor.execute(
-            "SELECT address, city, zip_code FROM users WHERE user_id = ?", (user_id,)
-        )
-        user = cursor.fetchone()
+        ).fetchall()
     finally:
         conn.close()
 
-    address = {"address": user[0], "city": user[1], "zip_code": str(user[2]).zfill(5)}
-
     today = get_today()
-    orders_list = []
-
-    for order in orders:
-        order_dict = {
+    return [
+        {
             "order_id": order[0],
             "status": order[1],
             "date_purchase": french_date(order[2]),
@@ -64,9 +54,8 @@ def get_customer_orders_and_address(user_id: int) -> dict:
             "days_since_shipped": days_since(order[3], today),
             "days_since_delivered": days_since(order[4], today),
         }
-        orders_list.append(order_dict)
-
-    return {"address": address, "orders": orders_list}
+        for order in orders
+    ]
 
 
 def days_since(timestamp: str | None, today: date) -> int | None:

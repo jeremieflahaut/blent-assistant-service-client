@@ -3,24 +3,19 @@ import sqlite3
 import pytest
 
 import tools
-from tools import french_date, get_customer_orders_and_address
+from tools import french_date, get_customer_orders
 
 # Clients de la base de test (tests/conftest.py)
 CUSTOMER_WITH_ORDERS = 1
-CUSTOMER_WITH_SHORT_ZIP_CODE = 2
+OTHER_CUSTOMER = 2
 CUSTOMER_WITHOUT_ORDER = 3
 
 
-def test_returns_address_and_orders(monkeypatch):
+def test_returns_orders(monkeypatch):
     monkeypatch.setenv("SIMULATED_TODAY", "2024-06-01")
-    result = get_customer_orders_and_address(CUSTOMER_WITH_ORDERS)
+    orders = get_customer_orders(CUSTOMER_WITH_ORDERS)
 
-    assert result["address"] == {
-        "address": "6096 Inceptos Ave",
-        "city": "Le Puy-en-Velay",
-        "zip_code": "78971",
-    }
-    assert result["orders"][0] == {
+    assert orders[0] == {
         "order_id": 12,
         "status": "invoiced",
         "date_purchase": "30 mai 2024",
@@ -33,35 +28,23 @@ def test_returns_address_and_orders(monkeypatch):
 
 
 def test_orders_sorted_from_most_recent():
-    result = get_customer_orders_and_address(CUSTOMER_WITH_ORDERS)
+    orders = get_customer_orders(CUSTOMER_WITH_ORDERS)
 
-    assert [order["order_id"] for order in result["orders"]] == [12, 13, 10]
+    assert [order["order_id"] for order in orders] == [12, 13, 10]
 
 
 def test_only_returns_customer_orders():
-    result = get_customer_orders_and_address(CUSTOMER_WITH_SHORT_ZIP_CODE)
+    orders = get_customer_orders(OTHER_CUSTOMER)
 
-    assert [order["order_id"] for order in result["orders"]] == [11]
+    assert [order["order_id"] for order in orders] == [11]
 
 
 def test_customer_without_order():
-    result = get_customer_orders_and_address(CUSTOMER_WITHOUT_ORDER)
-
-    assert result["orders"] == []
-    assert result["address"]["city"] == "Épinal"
-
-
-def test_zip_code_keeps_leading_zero():
-    result = get_customer_orders_and_address(CUSTOMER_WITH_SHORT_ZIP_CODE)
-
-    assert result["address"]["zip_code"] == "06843"
+    assert get_customer_orders(CUSTOMER_WITHOUT_ORDER) == []
 
 
 def test_no_internal_identifier_returned():
-    result = get_customer_orders_and_address(CUSTOMER_WITH_ORDERS)
-
-    assert set(result["address"]) == {"address", "city", "zip_code"}
-    for order in result["orders"]:
+    for order in get_customer_orders(CUSTOMER_WITH_ORDERS):
         assert "user_id" not in order
         assert "index" not in order
 
@@ -69,9 +52,9 @@ def test_no_internal_identifier_returned():
 def test_days_since_each_date(monkeypatch):
     # Commande 10 : achat le 6 mai, expédition le 8 mai, livraison le 22 mai 2024
     monkeypatch.setenv("SIMULATED_TODAY", "2024-06-01")
-    result = get_customer_orders_and_address(CUSTOMER_WITH_ORDERS)
+    orders = get_customer_orders(CUSTOMER_WITH_ORDERS)
 
-    order = next(order for order in result["orders"] if order["order_id"] == 10)
+    order = next(order for order in orders if order["order_id"] == 10)
     assert order["days_since_purchase"] == 26
     assert order["days_since_shipped"] == 24
     assert order["days_since_delivered"] == 10
@@ -103,6 +86,6 @@ def test_connection_closed_when_query_fails(monkeypatch):
     monkeypatch.setattr(tools, "get_connection", lambda: conn)
 
     with pytest.raises(sqlite3.OperationalError):
-        get_customer_orders_and_address(CUSTOMER_WITH_ORDERS)
+        get_customer_orders(CUSTOMER_WITH_ORDERS)
 
     assert conn.closed
