@@ -29,7 +29,7 @@ from config import get_model_name, get_today
 from customers import list_customers
 from llm import GENERATION, build_model
 from tests.eval.verifs import check, dates_in, numbers_in
-from tools import french_date, get_customer_orders_and_address
+from tools import french_date, get_customer_orders
 
 EVAL_DIR = Path(__file__).parent
 
@@ -59,13 +59,20 @@ def run_case(model, customer: dict, question: str, today: date) -> dict:
 
 
 def known_facts(user_id: int, today: date) -> tuple[set[str], set[str]]:
-    """Dates et nombres que le bot a le droit de citer : ceux des données du client
-    (commandes, durées, adresse), le nombre de ses commandes et la date du jour."""
-    result = get_customer_orders_and_address(user_id)
-    facts = (
-        json.dumps(result, ensure_ascii=False) + " " + french_date(today.isoformat())
-    )
-    return dates_in(facts), numbers_in(facts) | {str(len(result["orders"]))}
+    """Dates et nombres que le bot a le droit de citer : ceux des commandes du client
+    (numéros, dates, durées), le nombre de ses commandes et la date du jour."""
+    orders = get_customer_orders(user_id)
+    today_label = french_date(today.isoformat())
+    facts = json.dumps(orders, ensure_ascii=False) + " " + today_label
+    return dates_in(facts), numbers_in(facts) | {str(len(orders))}
+
+
+def score_line(rows: list, index: int) -> str:
+    """Score d'une répétition : tous les cas, puis ceux exigés par le brief."""
+    results = [(case["brief"], not runs[index]["failures"]) for case, runs in rows]
+    brief = [passed for is_brief, passed in results if is_brief]
+    total = sum(passed for _, passed in results)
+    return f"**{total}/{len(results)}** (cas du brief : **{sum(brief)}/{len(brief)}**)"
 
 
 def write_report(path: Path, today: date, repeat: int, rows: list) -> None:
@@ -79,24 +86,22 @@ def write_report(path: Path, today: date, repeat: int, rows: list) -> None:
         "",
     ]
     for index in range(repeat):
-        passed = sum(
-            not runs[index]["failures"] for _, runs in rows if index < len(runs)
-        )
-        lines.append(f"- Répétition {index + 1} : **{passed}/{len(rows)}**")
+        lines.append(f"- Répétition {index + 1} : {score_line(rows, index)}")
     lines += [
         "",
         "Cas à plusieurs messages (29, 30) : non joués par ce script. Le ton n'est pas "
         "noté : voir les points « À relire ».",
         "",
-        "| Cas | Réussites | Échecs relevés |",
-        "|---|---|---|",
+        "| Cas | Brief | Réussites | Échecs relevés |",
+        "|---|---|---|---|",
     ]
     for case, runs in rows:
         passed = sum(not run["failures"] for run in runs)
-        failures = sorted({failure for run in runs for failure in run["failures"]})
-        lines.append(
-            f"| {case['id']} | {passed}/{len(runs)} | {' ; '.join(failures)} |"
+        failures = " ; ".join(
+            sorted({failure for run in runs for failure in run["failures"]})
         )
+        brief = "oui" if case["brief"] else "ajout"
+        lines.append(f"| {case['id']} | {brief} | {passed}/{len(runs)} | {failures} |")
     lines.append("")
 
     for case, runs in rows:
@@ -169,8 +174,7 @@ def main() -> None:
         write_report(path, today, args.repeat, rows)  # réécrit à chaque cas
 
     for index in range(args.repeat):
-        passed = sum(not runs[index]["failures"] for _, runs in rows)
-        print(f"Score, répétition {index + 1} : {passed}/{len(rows)}")
+        print(f"Score, répétition {index + 1} : {score_line(rows, index)}")
     print(f"Rapport : {path}")
 
 

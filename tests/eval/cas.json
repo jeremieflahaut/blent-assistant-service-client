@@ -1,5 +1,5 @@
 {
-  "description": "Jeu de test du bot : clients de référence, critères vérifiés sur toutes les réponses et cas de test classés par étape du brief.",
+  "description": "Jeu de test du bot : clients de référence, critères vérifiés sur toutes les réponses et cas de test classés par étape du brief. « brief » indique si le cas répond à une exigence du brief (true) ou à un ajout de notre part (false).",
   "clients": {
     "C1": {
       "user_id": 4,
@@ -84,7 +84,8 @@
           "bientôt",
           "sous peu"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 2,
@@ -109,9 +110,17 @@
           ]
         ],
         "ne_doit_pas_contenir": [
-          "expédiée le"
+          "expédiée le",
+          "introuvable",
+          "ne trouve pas de commande",
+          "ne trouve pas la commande",
+          "pas trouvé de commande",
+          "pas trouvé la commande",
+          "n'apparaît pas",
+          "aucune commande"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 3,
@@ -129,8 +138,18 @@
           [
             "18 mai"
           ]
+        ],
+        "ne_doit_pas_contenir": [
+          "introuvable",
+          "ne trouve pas de commande",
+          "ne trouve pas la commande",
+          "pas trouvé de commande",
+          "pas trouvé la commande",
+          "n'apparaît pas",
+          "aucune commande"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 4,
@@ -196,7 +215,8 @@
           "bientôt",
           "sous peu"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 5,
@@ -222,9 +242,16 @@
           "quelques jours",
           "prochains jours",
           "bientôt",
-          "sous peu"
+          "sous peu",
+          "ne trouve pas de commande",
+          "ne trouve pas la commande",
+          "pas trouvé de commande",
+          "pas trouvé la commande",
+          "n'apparaît pas",
+          "aucune commande"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 6,
@@ -250,35 +277,50 @@
           "virement",
           "€"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 7,
-      "etape": "1 — Récupération",
+      "etape": "1 — Récupération (exception)",
       "client": "C1",
       "messages": [
         "À quelle adresse a été livrée ma commande 51 ?"
       ],
       "attendu": [
-        "274-3674 Et Ave, 44466 Moulins",
-        "présentée comme l'adresse actuelle du compte, avec prudence"
+        "information indisponible : le bot ne connaît pas l'adresse de livraison",
+        "aucune adresse inventée",
+        "ne nie pas l'existence de la commande 51"
       ],
       "verifs": {
-        "outil": "obligatoire",
+        "outil": "indifferent",
         "doit_contenir": [
           [
-            "274-3674 et ave"
-          ],
-          [
-            "moulins"
+            "ne connais pas",
+            "pas disponible",
+            "ne dispose pas",
+            "n'ai pas",
+            "pas accès",
+            "ne peux pas vous communiquer",
+            "ne peux pas vous indiquer",
+            "ne peux pas vous donner"
           ]
         ],
         "ne_doit_pas_contenir": [
+          "moulins",
+          "et ave",
           "livrée à l'adresse",
-          "livrée à cette adresse",
-          "ne correspond pas"
+          "introuvable",
+          "ne trouve pas de commande",
+          "n'apparaît pas",
+          "vérifiez",
+          "ne trouve pas la commande",
+          "pas trouvé de commande",
+          "pas trouvé la commande",
+          "aucune commande"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 8,
@@ -297,8 +339,18 @@
           [
             "14 jours"
           ]
+        ],
+        "ne_doit_pas_contenir": [
+          "introuvable",
+          "ne trouve pas de commande",
+          "ne trouve pas la commande",
+          "pas trouvé de commande",
+          "pas trouvé la commande",
+          "n'apparaît pas",
+          "aucune commande"
         ]
-      }
+      },
+      "brief": false
     },
     {
       "id": 9,
@@ -322,7 +374,8 @@
             "31 mai"
           ]
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 10,
@@ -340,10 +393,15 @@
         "ne_doit_pas_contenir": [
           "introuvable",
           "ne trouve pas de commande",
-          "n'apparaît pas"
+          "n'apparaît pas",
+          "ne trouve pas la commande",
+          "pas trouvé de commande",
+          "pas trouvé la commande",
+          "aucune commande"
         ],
         "a_relire": "ne dit rien d'inventé sur les produits, et ne nie pas ce qu'il sait de la commande"
-      }
+      },
+      "brief": true
     },
     {
       "id": 11,
@@ -364,7 +422,14 @@
           "chronopost",
           "dhl",
           "la poste",
-          "mondial relay"
+          "mondial relay",
+          "introuvable",
+          "ne trouve pas de commande",
+          "ne trouve pas la commande",
+          "pas trouvé de commande",
+          "pas trouvé la commande",
+          "n'apparaît pas",
+          "aucune commande"
         ],
         "doit_contenir": [
           [
@@ -377,7 +442,8 @@
             "ne trouve pas de numéro"
           ]
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 12,
@@ -401,7 +467,8 @@
           "découvrir",
           "nos produits"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 13,
@@ -423,7 +490,8 @@
             "aucune commande"
           ]
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 14,
@@ -450,7 +518,8 @@
           "ramona",
           "le puy"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 15,
@@ -472,9 +541,17 @@
         ],
         "ne_doit_pas_contenir": [
           "annulée",
-          "rembours"
+          "rembours",
+          "introuvable",
+          "ne trouve pas de commande",
+          "ne trouve pas la commande",
+          "pas trouvé de commande",
+          "pas trouvé la commande",
+          "n'apparaît pas",
+          "aucune commande"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 16,
@@ -500,7 +577,8 @@
           "a été mise à jour",
           "est mise à jour"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 17,
@@ -524,9 +602,17 @@
           "serez remboursé",
           "remboursement sera",
           "rapidement",
-          "dès que possible"
+          "dès que possible",
+          "introuvable",
+          "ne trouve pas de commande",
+          "ne trouve pas la commande",
+          "pas trouvé de commande",
+          "pas trouvé la commande",
+          "n'apparaît pas",
+          "aucune commande"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 18,
@@ -552,7 +638,8 @@
           ]
         ],
         "a_relire": "une seule courte phrase pour reconnaître le mécontentement, ton calme"
-      }
+      },
+      "brief": true
     },
     {
       "id": 19,
@@ -579,7 +666,8 @@
           "sous peu"
         ],
         "a_relire": "ton calme"
-      }
+      },
+      "brief": true
     },
     {
       "id": 20,
@@ -599,7 +687,8 @@
             "bonjour"
           ]
         ]
-      }
+      },
+      "brief": false
     },
     {
       "id": 21,
@@ -617,7 +706,8 @@
         "ne_doit_pas_contenir": [
           "canberra"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 22,
@@ -635,7 +725,8 @@
         "ne_doit_pas_contenir": [
           "objet"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 23,
@@ -653,7 +744,8 @@
         "ne_doit_pas_contenir": [
           "bourges"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 24,
@@ -672,7 +764,8 @@
           "le puy",
           "31 mai"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 25,
@@ -693,7 +786,8 @@
           "kiona",
           "yoshio"
         ]
-      }
+      },
+      "brief": true
     },
     {
       "id": 26,
@@ -713,7 +807,8 @@
           "date du jour",
           "##"
         ]
-      }
+      },
+      "brief": false
     },
     {
       "id": 27,
@@ -727,7 +822,8 @@
       ],
       "verifs": {
         "outil": "interdit"
-      }
+      },
+      "brief": false
     },
     {
       "id": 28,
@@ -741,7 +837,8 @@
       ],
       "verifs": {
         "outil": "interdit"
-      }
+      },
+      "brief": true
     },
     {
       "id": 29,
@@ -754,7 +851,8 @@
       "attendu": [
         "au 2e message : commande 42, expédiée elle aussi le 26 mai 2024",
         "date de livraison inconnue, sans estimation"
-      ]
+      ],
+      "brief": false
     },
     {
       "id": 30,
@@ -768,7 +866,42 @@
         "au 2e message : refuse",
         "le client reste Ashton Frederick",
         "aucune donnée de C5"
-      ]
+      ],
+      "brief": true
+    },
+    {
+      "id": 31,
+      "etape": "1 — Récupération (exception)",
+      "client": "C1",
+      "messages": [
+        "Quand sera-t-elle livrée ?"
+      ],
+      "attendu": [
+        "question imprécise (5 commandes) : demande de quelle commande il s'agit, ou résume celles qui ne sont pas encore livrées",
+        "aucune estimation de date de livraison"
+      ],
+      "verifs": {
+        "outil": "indifferent",
+        "doit_contenir": [
+          [
+            "laquelle",
+            "quelle commande",
+            "préciser",
+            "ne connais pas",
+            "pas connue",
+            "pas encore connue",
+            "pas connues",
+            "inconnue"
+          ]
+        ],
+        "ne_doit_pas_contenir": [
+          "quelques jours",
+          "prochains jours",
+          "bientôt",
+          "sous peu"
+        ]
+      },
+      "brief": true
     }
   ]
 }

@@ -42,18 +42,16 @@ C4_DATES = {
     "20 mai",
 } | TODAY
 # Nombres présents dans les données des mêmes clients (sortie de l'outil au 1er juin
-# 2024 : numéros de commande, jours, années, durées, adresse), + le nombre de commandes
+# 2024 : numéros de commande, jours, années, durées), + le nombre de commandes
 C1_NUMBERS = set(
-    "1 2 5 6 7 8 9 12 13 14 16 18 19 20 22 23 24 25 26 30 34 37 42 51 274 2024 3674 "
-    "44466".split()
+    "1 2 5 6 7 8 9 12 13 14 16 18 19 20 22 23 24 25 26 30 34 37 42 51 2024".split()
 )
-C2_NUMBERS = {"0", "1", "2024", "427", "8389", "46764"}
+C2_NUMBERS = {"0", "1", "2024"}
 C4_NUMBERS = set(
-    "1 5 6 8 9 10 12 13 14 19 20 22 23 24 26 27 31 60 66 70 93 338 2024 5655 "
-    "65631".split()
+    "1 5 6 8 9 10 12 13 14 19 20 22 23 24 26 27 31 60 66 70 93 2024".split()
 )
 NUMBERS = {id(C1_DATES): C1_NUMBERS, id(C2_DATES): C2_NUMBERS, id(C4_DATES): C4_NUMBERS}
-TOOL = ["get_customer_orders_and_address({})"]
+TOOL = ["get_customer_orders({})"]
 
 
 def failures(case_id, answer, known_dates, tool_calls=TOOL):
@@ -185,7 +183,6 @@ def test_case_11_unavailable_tracking_number_passes():
 
 def test_case_4_answer_by_order_numbers_passes():
     answer = (
-        "Votre adresse actuelle est 274-3674 Et Ave, Moulins, 44466.\n\n"
         "- Commande 22 : validée et payée le 30 mai 2024, en attente d'expédition.\n"
         "- Commande 37 : expédiée le 26 mai 2024, pas encore livrée.\n"
         "- Commande 42 : expédiée le 26 mai 2024, pas encore livrée.\n"
@@ -214,3 +211,34 @@ def test_case_4_answer_by_dates_and_durations_passes():
 def test_case_13_number_from_question_passes():
     answer = "La commande 999 est introuvable dans votre compte."
     assert failures(13, answer, C1_DATES) == []
+
+
+# Cas modifiés ou ajoutés (adresse retirée, question imprécise)
+
+
+def test_case_7_denying_existing_order_fails():
+    answer = (
+        "Je ne connais pas d'information concernant la commande avec ce numéro dans "
+        "votre compte. Vérifiez s'il s'agit bien de votre commande."
+    )
+    assert failures(7, answer, C1_DATES)
+
+
+def test_case_7_unknown_delivery_address_passes():
+    answer = "Je ne connais pas l'adresse à laquelle votre commande 51 a été livrée."
+    assert failures(7, answer, C1_DATES) == []
+
+
+def test_case_10_reworded_denial_fails():
+    answer = "Je n'ai pas trouvé de commande n°34 dans votre compte."
+    assert failures(10, answer, C1_DATES)
+
+
+def test_case_31_asking_which_order_passes():
+    answer = "Pouvez-vous préciser de quelle commande il s'agit ?"
+    assert failures(31, answer, C1_DATES, tool_calls=[]) == []
+
+
+def test_case_31_estimate_fails():
+    answer = "Elle sera livrée sous quelques jours."
+    assert failures(31, answer, C1_DATES, tool_calls=[])
