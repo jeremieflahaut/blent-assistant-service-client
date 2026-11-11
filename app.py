@@ -1,6 +1,22 @@
+import logging
+
 import streamlit as st
 
+from agent import build_agent, stream_reply
+from config import get_today
 from customers import list_customers
+from llm import build_model
+
+# Indicateurs d'attente : le premier passage du modèle (décider d'appeler l'outil) peut
+# durer plusieurs secondes sans qu'aucun mot ne s'affiche
+PROCESSING = "Votre demande est en cours de traitement…"
+CHECKING_ORDERS = "Je consulte vos commandes…"
+# Message fixe : le détail d'une erreur (chemin de la base, adresse du serveur Ollama)
+# ne doit jamais apparaître dans la conversation
+ERROR_MESSAGE = (
+    "Désolé, je ne peux pas vous répondre pour le moment. "
+    "Merci de réessayer dans quelques instants."
+)
 
 st.title("Service client")
 
@@ -37,3 +53,51 @@ with st.sidebar:
 if "user_id" not in st.session_state:
     st.info("Choisissez un client dans le menu de gauche pour commencer.")
     st.stop()
+
+# Un agent par conversation : son prompt système porte le nom du client
+if "agent" not in st.session_state:
+    customer = customers[st.session_state.user_id]
+    st.session_state.agent = build_agent(
+        build_model(), customer["first_name"], customer["last_name"], get_today()
+    )
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+
+def answer_text(question: str, waiting, spinner):
+    """Réponse à afficher avec st.write_stream ; le spinner passe à « je consulte vos
+    commandes » à l'appel d'outil et disparaît au premier mot."""
+    for text in stream_reply(
+        st.session_state.agent,
+        question,
+        st.session_state.user_id,
+        on_tool_call=lambda: spinner.update(label=CHECKING_ORDERS),
+    ):
+        waiting.empty()
+        yield text
+
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if question := st.chat_input("Votre question sur vos commandes…"):
+    st.session_state.messages.append({"role": "user", "content": question})
+    with st.chat_message("user"):
+        st.markdown(question)
+
+    with st.chat_message("assistant"):
+        # st.status : un spinner dont le texte peut changer en cours de route
+        waiting = st.empty()
+        spinner = waiting.status(PROCESSING)
+        try:
+            answer = st.write_stream(answer_text(question, waiting, spinner))
+        except Exception:
+            logging.exception("L'agent n'a pas pu répondre")
+            answer = None
+        waiting.empty()
+        if answer:
+            st.session_state.messages.append({"role": "assistant", "content": answer})
+        else:
+            st.error(ERROR_MESSAGE)
