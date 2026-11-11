@@ -200,7 +200,6 @@ le dernier message.
   d'environ 13 échanges tient dans le contexte pour un client à 5 commandes.
 - Avec un petit modèle (`ministral-3:3b`), le bot écrit parfois une phrase avant de consulter
   les commandes (« je vais vérifier… »).
-- **Mise en production (coût)** : à compléter.
 
 ## Développement
 
