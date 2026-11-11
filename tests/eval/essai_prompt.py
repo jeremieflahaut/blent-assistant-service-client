@@ -45,16 +45,17 @@ def run_case(model, customer: dict, question: str, today: date) -> dict:
     except Exception as error:  # un cas en erreur ne doit pas arrêter l'essai
         duration = time.perf_counter() - start
         return {"duration": duration, "tool_calls": [], "answer": f"ERREUR : {error}"}
-    messages = result["messages"]
+    model_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
     return {
         "duration": time.perf_counter() - start,
         "tool_calls": [
             f"{call['name']}({json.dumps(call['args'], ensure_ascii=False)})"
-            for message in messages
-            if isinstance(message, AIMessage)
+            for message in model_messages
             for call in message.tool_calls
         ],
-        "answer": messages[-1].content,
+        # Tout ce que le client voit à l'écran, pas seulement le dernier message : le
+        # texte écrit avant l'appel d'outil (« je vais vérifier… ») est aussi noté
+        "answer": "\n\n".join(m.text for m in model_messages if m.text),
     }
 
 
