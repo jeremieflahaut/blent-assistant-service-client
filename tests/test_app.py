@@ -7,6 +7,7 @@ from agent import customer_orders_tool
 from tests.fakes import FakeToolModel
 
 CUSTOMER = 1  # Ramona Howell dans la base de test (tests/conftest.py)
+OTHER_CUSTOMER = 2  # Ella Hampton
 ANSWER = "Votre commande a été expédiée le 23 mai 2024."
 
 
@@ -119,3 +120,39 @@ def test_new_conversation_clears_the_chat():
     assert "messages" not in app.session_state
     assert "agent" not in app.session_state
     assert len(app.chat_message) == 0
+
+
+def chat_model(monkeypatch, answers: list[str]) -> FakeToolModel:
+    """Faux modèle qui répond dans l'ordre, sans appel d'outil."""
+    model = FakeToolModel(messages=iter(AIMessage(content=a) for a in answers))
+    monkeypatch.setattr(llm, "build_model", lambda: model)
+    return model
+
+
+def test_bot_remembers_the_conversation(monkeypatch):
+    model = chat_model(monkeypatch, ["Réponse 1.", "Réponse 2."])
+    app = start_chat()
+    app.chat_input[0].set_value("Où en est ma commande ?").run()
+    app.chat_input[0].set_value("Et quand a-t-elle été expédiée ?").run()
+
+    seen = [m.text for m in model.calls[-1] if m.type in ("human", "ai")]
+    assert seen == [
+        "Où en est ma commande ?",
+        "Réponse 1.",
+        "Et quand a-t-elle été expédiée ?",
+    ]
+
+
+def test_next_customer_sees_nothing_of_the_previous_conversation(monkeypatch):
+    model = chat_model(monkeypatch, ["Réponse pour Ramona.", "Réponse pour Ella."])
+    app = start_chat()  # Ramona Howell
+    app.chat_input[0].set_value("Question de Ramona").run()
+    app.button[0].click().run()  # Nouvelle conversation
+    app.selectbox[0].select(OTHER_CUSTOMER).run()  # Ella Hampton
+    app.chat_input[0].set_value("Question d'Ella").run()
+
+    # Tout ce que le modèle reçoit pour Ella, prompt système compris
+    seen = " ".join(m.text for m in model.calls[-1])
+    assert "Ella Hampton" in seen
+    assert "Ramona" not in seen
+    assert "Question d'Ella" in seen

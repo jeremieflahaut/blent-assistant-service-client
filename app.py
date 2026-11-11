@@ -1,6 +1,8 @@
 import logging
+import uuid
 
 import streamlit as st
+from langgraph.checkpoint.memory import InMemorySaver
 
 from agent import build_agent, stream_reply
 from config import get_today
@@ -54,12 +56,19 @@ if "user_id" not in st.session_state:
     st.info("Choisissez un client dans le menu de gauche pour commencer.")
     st.stop()
 
-# Un agent par conversation : son prompt système porte le nom du client
+# Un agent par conversation : son prompt système porte le nom du client, et sa mémoire
+# (InMemorySaver) ne contient que cette conversation. « Nouvelle conversation » efface
+# l'agent avec le reste de la session : rien ne passe d'un client à l'autre.
 if "agent" not in st.session_state:
     customer = customers[st.session_state.user_id]
     st.session_state.agent = build_agent(
-        build_model(), customer["first_name"], customer["last_name"], get_today()
+        build_model(),
+        customer["first_name"],
+        customer["last_name"],
+        get_today(),
+        checkpointer=InMemorySaver(),
     )
+    st.session_state.thread_id = str(uuid.uuid4())
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -72,6 +81,7 @@ def answer_text(question: str, waiting, spinner):
         st.session_state.agent,
         question,
         st.session_state.user_id,
+        st.session_state.thread_id,
         on_tool_call=lambda: spinner.update(label=CHECKING_ORDERS),
     ):
         waiting.empty()

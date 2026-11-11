@@ -3,6 +3,7 @@ from datetime import date
 
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langgraph.checkpoint.memory import InMemorySaver
 
 from agent import Context, build_agent, customer_orders_tool, stream_reply
 from tests.fakes import FakeToolModel
@@ -61,6 +62,7 @@ def stream_answer(model_messages: list) -> tuple[str, int]:
         agent,
         "Où en est ma commande ?",
         CUSTOMER_WITH_ORDERS,
+        "conversation-1",
         on_tool_call=lambda: tool_calls.append(True),
     )
     return "".join(chunks), len(tool_calls)
@@ -102,3 +104,55 @@ def test_stream_reply_separates_text_written_before_the_tool_call():
     )
 
     assert text == "Un instant.\n\nVoici vos commandes."
+
+
+def conversation_seen_by_model(model: FakeToolModel, call: int) -> list[str]:
+    """Questions et réponses que le modèle reçoit à son appel n° call (sans le prompt
+    système)."""
+    return [m.text for m in model.calls[call] if m.type in ("human", "ai")]
+
+
+def test_agent_remembers_the_conversation():
+    model = FakeToolModel(
+        messages=iter(
+            [AIMessage(content="Réponse 1."), AIMessage(content="Réponse 2.")]
+        )
+    )
+    agent = build_agent(
+        model, "Ramona", "Howell", date(2024, 6, 3), checkpointer=InMemorySaver()
+    )
+
+    for question in ["Première question", "Et la suivante ?"]:
+        list(
+            stream_reply(agent, question, CUSTOMER_WITH_ORDERS, "conv-1", lambda: None)
+        )
+
+    assert conversation_seen_by_model(model, 1) == [
+        "Première question",
+        "Réponse 1.",
+        "Et la suivante ?",
+    ]
+
+
+def test_conversations_do_not_share_their_history():
+    model = FakeToolModel(
+        messages=iter(
+            [AIMessage(content="Réponse 1."), AIMessage(content="Réponse 2.")]
+        )
+    )
+    agent = build_agent(
+        model, "Ramona", "Howell", date(2024, 6, 3), checkpointer=InMemorySaver()
+    )
+
+    list(
+        stream_reply(
+            agent, "Première question", CUSTOMER_WITH_ORDERS, "conv-1", lambda: None
+        )
+    )
+    list(
+        stream_reply(
+            agent, "Autre question", CUSTOMER_WITH_ORDERS, "conv-2", lambda: None
+        )
+    )
+
+    assert conversation_seen_by_model(model, 1) == ["Autre question"]
