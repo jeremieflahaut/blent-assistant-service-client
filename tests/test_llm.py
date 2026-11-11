@@ -11,6 +11,7 @@ def test_model_uses_env_name_and_course_settings(monkeypatch):
     assert model.top_p == 0.75
     assert model.top_k == 10
     assert model.repeat_penalty == 1.0
+    assert model.num_ctx == 8192
 
 
 def test_settings_override_defaults(monkeypatch):

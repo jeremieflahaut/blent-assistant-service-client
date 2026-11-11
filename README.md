@@ -194,10 +194,10 @@ le dernier message.
   Le **routage sémantique en amont du modèle n'est pas encore implémenté** : aujourd'hui, une
   question hors sujet atteint le modèle, qui la refuse selon son prompt.
 - **Choix du modèle** en cours d'évaluation (`ministral-3:14b` ou `mistral-small3.2:24b`).
-- **Taille du contexte** : chaque échange ajoute environ 550 tokens (estimation). Ollama règle
-  la taille du contexte selon la mémoire du GPU (4 096 tokens sur un GPU de 4 Go, 32 768 sur
-  le GPU de la sandbox) : sur un petit GPU, quelques échanges seulement tiennent dans le
-  contexte.
+- **Taille du contexte** : fixée à 8 192 tokens (`num_ctx` dans `llm.py`), pour un
+  comportement identique quel que soit le GPU (sans ce réglage, Ollama la choisit selon la
+  mémoire du GPU). Chaque échange ajoute environ 550 tokens (estimation) : une conversation
+  d'environ 13 échanges tient dans le contexte pour un client à 5 commandes.
 - Avec un petit modèle (`ministral-3:3b`), le bot écrit parfois une phrase avant de consulter
   les commandes (« je vais vérifier… »).
 - **Mise en production (coût)** : à compléter.
