@@ -43,7 +43,7 @@ charge le modèle en mémoire.
 
 | Variable | Rôle |
 |---|---|
-| `OLLAMA_MODEL` | Modèle servi par Ollama (valeur par défaut dans `.env.example`). |
+| `OLLAMA_MODEL` | Modèle servi par Ollama : `ministral-3:14b` par défaut. |
 | `SIMULATED_TODAY` | Date du jour simulée, au format `AAAA-MM-JJ`. Les commandes de la base datent toutes de mai 2024 : sans elle, une commande expédiée serait « en route depuis deux ans ». La valeur fournie tombe début juin 2024. Variable absente : vraie date du jour. |
 
 Une variable définie dans le terminal l'emporte sur le `.env`, par exemple pour essayer un
