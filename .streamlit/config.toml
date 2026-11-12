@@ -1,0 +1,9 @@
+[server]
+# Ni navigateur ni question au premier lancement : la sandbox n'a pas d'écran
+headless = true
+# Dans la Cloud Sandbox, le chat s'ouvre par le relais du VS Code web
+# (<adresse du port 8081>/proxy/8501/). Streamlit refuse sinon la connexion temps réel
+# venue d'une autre adresse que la sienne. Désactiver CORS impose de désactiver aussi la
+# protection XSRF, qui sert surtout à l'envoi de fichiers, absent de cette application.
+enableCORS = false
+enableXsrfProtection = false

@@ -41,7 +41,7 @@ if ! curl -fs "$OLLAMA_URL/api/version" > /dev/null; then
     }
 fi
 
-# 4. Modèle : téléchargé s'il est absent (9 Go pour ministral-3:14b)
+# 4. Modèle : téléchargé s'il est absent (15 Go pour mistral-small3.2:24b)
 if ! ollama show "$OLLAMA_MODEL" > /dev/null 2>&1; then
     echo "→ Téléchargement du modèle $OLLAMA_MODEL"
     ollama pull "$OLLAMA_MODEL"
@@ -54,7 +54,10 @@ if ! command -v uv > /dev/null; then
 fi
 uv sync
 
-# 6. Interface : http://localhost:8501 (headless : pas de navigateur ni de question
-# au premier lancement)
+# 6. Interface sur le port 8501 (réglages dans .streamlit/config.toml)
 echo "→ Lancement de l'assistant avec $OLLAMA_MODEL"
-OLLAMA_MODEL="$OLLAMA_MODEL" exec uv run streamlit run app.py --server.headless true
+if [ -n "${RUNPOD_POD_ID:-}" ]; then
+    # Cloud Sandbox : le chat s'ouvre par le relais du VS Code web (port 8081)
+    echo "→ Chat à ouvrir dans le navigateur : https://${RUNPOD_POD_ID}-8081.proxy.runpod.net/proxy/8501/"
+fi
+OLLAMA_MODEL="$OLLAMA_MODEL" exec uv run streamlit run app.py
