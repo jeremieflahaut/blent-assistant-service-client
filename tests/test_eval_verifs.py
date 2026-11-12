@@ -30,6 +30,7 @@ C1_DATES = {
     "18 mai",
 } | TODAY
 C2_DATES = TODAY
+C3_DATES = {"30 mai", "31 mai"} | TODAY
 C4_DATES = {
     "22 mai",
     "23 mai",
@@ -48,12 +49,18 @@ C1_NUMBERS = set(
     "1 2 5 6 7 8 9 12 13 14 16 18 19 20 22 23 24 25 26 30 34 37 42 51 2024".split()
 )
 C2_NUMBERS = {"0", "1", "2024"}
+C3_NUMBERS = {"1", "2", "13", "30", "31", "2024"}
 C4_NUMBERS = set(
     "1 5 6 8 9 10 12 13 14 19 20 22 23 24 26 27 31 60 66 70 93 2024".split()
 )
-NUMBERS = {id(C1_DATES): C1_NUMBERS, id(C2_DATES): C2_NUMBERS, id(C4_DATES): C4_NUMBERS}
+NUMBERS = {
+    id(C1_DATES): C1_NUMBERS,
+    id(C2_DATES): C2_NUMBERS,
+    id(C3_DATES): C3_NUMBERS,
+    id(C4_DATES): C4_NUMBERS,
+}
 # Nombre de commandes de chaque client
-ORDER_COUNTS = {id(C1_DATES): 5, id(C2_DATES): 0, id(C4_DATES): 5}
+ORDER_COUNTS = {id(C1_DATES): 5, id(C2_DATES): 0, id(C3_DATES): 1, id(C4_DATES): 5}
 TOOL = ["get_customer_orders({})"]
 
 
@@ -303,3 +310,34 @@ def test_case_15_misplaced_sympathy_fails():
         "le relais dans cette conversation."
     )
     assert "contient : mécontentement" in failures(15, answer, C1_DATES)
+
+
+# Essai du 24b avec le prompt v6 (2026-11-12)
+
+
+def test_case_19_one_day_ago_passes():
+    # La commande 13 a été expédiée le 31 mai, la veille du 1er juin
+    answer = (
+        "Votre commande 13 a été expédiée il y a 1 jour. Je ne connais pas sa date de "
+        "livraison."
+    )
+    assert failures(19, answer, C3_DATES) == []
+
+
+def test_case_15_promised_cancellation_fails():
+    answer = (
+        "Ashton Frederick, un conseiller va prendre le relais dans cette conversation "
+        "pour annuler votre commande 22."
+    )
+    assert "contient : pour annuler" in failures(15, answer, C1_DATES)
+
+
+def test_case_4_delivered_order_called_in_progress_fails():
+    answer = (
+        "Ashton Frederick, vous avez cinq commandes en cours.\n"
+        "La commande 22 a été validée et payée le 30 mai 2024.\n"
+        "Les commandes 37, 42 et 34 ont été expédiées respectivement les 26 mai 2024, "
+        "26 mai 2024 et 16 mai 2024.\n"
+        "La commande 51 a été livrée le 18 mai 2024."
+    )
+    assert "contient : cinq commandes en cours" in failures(4, answer, C1_DATES)

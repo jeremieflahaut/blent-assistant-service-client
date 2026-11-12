@@ -215,7 +215,9 @@
           "quelques jours",
           "prochains jours",
           "bientôt",
-          "sous peu"
+          "sous peu",
+          "5 commandes en cours",
+          "cinq commandes en cours"
         ]
       },
       "brief": true
@@ -560,7 +562,8 @@
           "n'apparaît pas",
           "aucune commande",
           "n'existe pas",
-          "mécontentement"
+          "mécontentement",
+          "pour annuler"
         ]
       },
       "brief": true
@@ -588,7 +591,9 @@
           "est modifiée",
           "a été mise à jour",
           "est mise à jour",
-          "mécontentement"
+          "mécontentement",
+          "pour changer",
+          "pour modifier"
         ]
       },
       "brief": true
@@ -653,7 +658,9 @@
         ],
         "a_relire": "une seule courte phrase pour reconnaître le mécontentement, ton calme",
         "ne_doit_pas_contenir": [
-          "conseiller"
+          "conseiller",
+          "5 commandes en cours",
+          "cinq commandes en cours"
         ]
       },
       "brief": true
@@ -673,7 +680,8 @@
         "outil": "obligatoire",
         "doit_contenir": [
           [
-            "31 mai"
+            "31 mai",
+            "1 jour"
           ]
         ],
         "ne_doit_pas_contenir": [
@@ -915,7 +923,9 @@
           "quelques jours",
           "prochains jours",
           "bientôt",
-          "sous peu"
+          "sous peu",
+          "5 commandes en cours",
+          "cinq commandes en cours"
         ]
       },
       "brief": true
