@@ -59,13 +59,14 @@ def run_case(model, customer: dict, question: str, today: date) -> dict:
     }
 
 
-def known_facts(user_id: int, today: date) -> tuple[set[str], set[str]]:
+def known_facts(user_id: int, today: date) -> tuple[set[str], set[str], int]:
     """Dates et nombres que le bot a le droit de citer : ceux des commandes du client
-    (numéros, dates, durées), le nombre de ses commandes et la date du jour."""
+    (numéros, dates, durées), le nombre de ses commandes et la date du jour ; puis le
+    nombre de commandes, pour accepter les comptages (« 2 commandes »)."""
     orders = get_customer_orders(user_id)
     today_label = french_date(today.isoformat())
     facts = json.dumps(orders, ensure_ascii=False) + " " + today_label
-    return dates_in(facts), numbers_in(facts) | {str(len(orders))}
+    return dates_in(facts), numbers_in(facts) | {str(len(orders))}, len(orders)
 
 
 def score_line(rows: list, index: int) -> str:
@@ -156,7 +157,7 @@ def main() -> None:
     rows = []
     for case in cases:
         customer = customers[data["clients"][case["client"]]["user_id"]]
-        dates, numbers = known_facts(customer["user_id"], today)
+        dates, numbers, order_count = known_facts(customer["user_id"], today)
         runs = []
         for model in models:
             run = run_case(model, customer, case["messages"][0], today)
@@ -167,6 +168,7 @@ def main() -> None:
                 data["interdits_globaux"],
                 dates,
                 numbers,
+                order_count,
             )
             runs.append(run)
         rows.append((case, runs))

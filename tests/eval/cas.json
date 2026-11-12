@@ -117,7 +117,8 @@
           "pas trouvé de commande",
           "pas trouvé la commande",
           "n'apparaît pas",
-          "aucune commande"
+          "aucune commande",
+          "n'existe pas"
         ]
       },
       "brief": true
@@ -146,7 +147,8 @@
           "pas trouvé de commande",
           "pas trouvé la commande",
           "n'apparaît pas",
-          "aucune commande"
+          "aucune commande",
+          "n'existe pas"
         ]
       },
       "brief": true
@@ -248,7 +250,8 @@
           "pas trouvé de commande",
           "pas trouvé la commande",
           "n'apparaît pas",
-          "aucune commande"
+          "aucune commande",
+          "n'existe pas"
         ]
       },
       "brief": true
@@ -317,7 +320,8 @@
           "ne trouve pas la commande",
           "pas trouvé de commande",
           "pas trouvé la commande",
-          "aucune commande"
+          "aucune commande",
+          "n'existe pas"
         ]
       },
       "brief": true
@@ -347,7 +351,8 @@
           "pas trouvé de commande",
           "pas trouvé la commande",
           "n'apparaît pas",
-          "aucune commande"
+          "aucune commande",
+          "n'existe pas"
         ]
       },
       "brief": false
@@ -368,10 +373,12 @@
         "outil": "obligatoire",
         "doit_contenir": [
           [
-            "66"
+            "66",
+            "22 mai"
           ],
           [
-            "31 mai"
+            "31 mai",
+            "hier"
           ]
         ]
       },
@@ -397,7 +404,8 @@
           "ne trouve pas la commande",
           "pas trouvé de commande",
           "pas trouvé la commande",
-          "aucune commande"
+          "aucune commande",
+          "n'existe pas"
         ],
         "a_relire": "ne dit rien d'inventé sur les produits, et ne nie pas ce qu'il sait de la commande"
       },
@@ -429,7 +437,8 @@
           "pas trouvé de commande",
           "pas trouvé la commande",
           "n'apparaît pas",
-          "aucune commande"
+          "aucune commande",
+          "n'existe pas"
         ],
         "doit_contenir": [
           [
@@ -511,7 +520,8 @@
             "introuvable",
             "ne trouve pas",
             "n'apparaît pas",
-            "aucune commande"
+            "aucune commande",
+            "n'existe pas dans votre compte"
           ]
         ],
         "ne_doit_pas_contenir": [
@@ -548,7 +558,9 @@
           "pas trouvé de commande",
           "pas trouvé la commande",
           "n'apparaît pas",
-          "aucune commande"
+          "aucune commande",
+          "n'existe pas",
+          "mécontentement"
         ]
       },
       "brief": true
@@ -575,7 +587,8 @@
           "a été modifiée",
           "est modifiée",
           "a été mise à jour",
-          "est mise à jour"
+          "est mise à jour",
+          "mécontentement"
         ]
       },
       "brief": true
@@ -609,7 +622,8 @@
           "pas trouvé de commande",
           "pas trouvé la commande",
           "n'apparaît pas",
-          "aucune commande"
+          "aucune commande",
+          "n'existe pas"
         ]
       },
       "brief": true
@@ -637,7 +651,10 @@
             "18 mai"
           ]
         ],
-        "a_relire": "une seule courte phrase pour reconnaître le mécontentement, ton calme"
+        "a_relire": "une seule courte phrase pour reconnaître le mécontentement, ton calme",
+        "ne_doit_pas_contenir": [
+          "conseiller"
+        ]
       },
       "brief": true
     },

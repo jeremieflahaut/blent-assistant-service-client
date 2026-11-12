@@ -1,7 +1,8 @@
 """Le vérificateur retrouve-t-il les verdicts déjà portés à la main ?
 
 Les réponses ci-dessous sont copiées des rapports d'essai du 14b
-(tests/eval/resultats/essai-agent-20261106-1519, -1537 et -1542).
+(tests/eval/resultats/essai-agent-20261106-1519, -1537 et -1542), puis des essais du
+14b et du 24b du 2026-11-12 dans la sandbox (rapports non versionnés).
 """
 
 import json
@@ -51,12 +52,17 @@ C4_NUMBERS = set(
     "1 5 6 8 9 10 12 13 14 19 20 22 23 24 26 27 31 60 66 70 93 2024".split()
 )
 NUMBERS = {id(C1_DATES): C1_NUMBERS, id(C2_DATES): C2_NUMBERS, id(C4_DATES): C4_NUMBERS}
+# Nombre de commandes de chaque client
+ORDER_COUNTS = {id(C1_DATES): 5, id(C2_DATES): 0, id(C4_DATES): 5}
 TOOL = ["get_customer_orders({})"]
 
 
 def failures(case_id, answer, known_dates, tool_calls=TOOL):
     numbers = NUMBERS[id(known_dates)]
-    return check(CASES[case_id], answer, tool_calls, FORBIDDEN, known_dates, numbers)
+    count = ORDER_COUNTS[id(known_dates)]
+    return check(
+        CASES[case_id], answer, tool_calls, FORBIDDEN, known_dates, numbers, count
+    )
 
 
 def test_dates_in_handles_first_of_month():
@@ -242,3 +248,58 @@ def test_case_31_asking_which_order_passes():
 def test_case_31_estimate_fails():
     answer = "Elle sera livrée sous quelques jours."
     assert failures(31, answer, C1_DATES, tool_calls=[])
+
+
+# Essais du 2026-11-12 (sandbox)
+
+
+def test_case_6_count_of_orders_passes():
+    # 14b : Bruno Mclean a bien deux commandes passées le 5 mai
+    answer = (
+        "Oui, Bruno Mclean, toutes vos commandes sont payées.\n"
+        "- **Commande du 5 mai 2024** (2 commandes) : livrées les 23 et 20 mai 2024."
+    )
+    assert failures(6, answer, C4_DATES) == []
+
+
+def test_count_above_number_of_orders_fails():
+    answer = "Oui, Bruno Mclean, vos 7 commandes sont payées."
+    assert failures(6, answer, C4_DATES)
+
+
+def test_case_9_purchase_date_and_yesterday_pass():
+    # 14b : la commande 66 a été passée le 22 mai et livrée le 31 mai, la veille
+    answer = (
+        "Votre dernière commande, passée le 22 mai 2024, est bien livrée depuis hier."
+    )
+    assert failures(9, answer, C4_DATES) == []
+
+
+def test_case_14_does_not_exist_in_account_passes():
+    # 24b
+    answer = "Ashton Frederick, la commande 13 n'existe pas dans votre compte."
+    assert failures(14, answer, C1_DATES) == []
+
+
+def test_case_10_does_not_exist_for_existing_order_fails():
+    answer = "La commande 34 n'existe pas dans votre compte."
+    assert failures(10, answer, C1_DATES)
+
+
+def test_case_18_unrequested_advisor_fails():
+    # 14b : le client ne demande aucune action
+    answer = (
+        "Votre commande **22** est en attente d'expédition depuis le 30 mai 2024.\n"
+        "Votre commande **51** vous a été livrée le 18 mai 2024.\n"
+        "Un conseiller va prendre le relais pour vous aider."
+    )
+    assert "contient : conseiller" in failures(18, answer, C1_DATES)
+
+
+def test_case_15_misplaced_sympathy_fails():
+    # 24b : simple demande d'annulation, sans mécontentement
+    answer = (
+        "Ashton Frederick, je comprends votre mécontentement. Un conseiller va prendre "
+        "le relais dans cette conversation."
+    )
+    assert "contient : mécontentement" in failures(15, answer, C1_DATES)

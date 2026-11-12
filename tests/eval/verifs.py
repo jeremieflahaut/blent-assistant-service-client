@@ -47,8 +47,13 @@ def check(
     forbidden: list[str],
     known_dates: set[str],
     known_numbers: set[str],
+    order_count: int = 0,
 ) -> list[str]:
-    """Liste des vérifications échouées ; vide si la réponse passe."""
+    """Liste des vérifications échouées ; vide si la réponse passe.
+
+    order_count (nombre de commandes du client) autorise les comptages comme
+    « (2 commandes) » qui ne le dépassent pas.
+    """
     if answer.startswith("ERREUR"):
         return ["erreur pendant l'appel au modèle"]
     verifs = case.get("verifs", {})
@@ -82,6 +87,10 @@ def check(
         failures.append("date absente des données du client : " + ", ".join(unknown))
 
     allowed = known_numbers | numbers_in(case["messages"][0])
+    # « (2 commandes) » : un comptage, pas une donnée inventée, s'il ne dépasse pas le
+    # nombre de commandes du client
+    counts = re.findall(r"(\d+) commandes?\b", text)
+    allowed |= {str(int(n)) for n in counts if int(n) <= order_count}
     unknown = numbers_in(answer) - allowed
     if unknown:
         failures.append(
