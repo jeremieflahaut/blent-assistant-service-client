@@ -22,20 +22,33 @@ cd blent-assistant-service-client
 1. crée `.env` à partir de `.env.example` ;
 2. installe Ollama s'il est absent ;
 3. démarre le serveur Ollama en arrière-plan (journal : `/tmp/ollama.log`) ;
-4. télécharge le modèle s'il est absent (9 Go pour `ministral-3:14b`, quelques minutes) ;
+4. télécharge le modèle s'il est absent (15 Go pour `mistral-small3.2:24b`, quelques
+   minutes) ;
 5. installe les dépendances Python dans un environnement isolé (`uv sync`, versions figées
    dans `uv.lock`) ;
 6. lance l'interface Streamlit sur le port **8501**.
 
-Streamlit démarre sans ouvrir de navigateur : il affiche l'adresse à ouvrir. Dans la sandbox,
-le port 8501 s'ouvre depuis l'onglet **Ports** de VS Code connecté à la sandbox.
+### Ouvrir le chat
 
-> ⚠️ À confirmer : l'accès au port 8501 depuis le VS Code web de la sandbox, sans VS Code
-> local.
+Dans la Cloud Sandbox, le chat s'ouvre dans le navigateur **par le relais du VS Code web** :
+l'adresse du VS Code web de la sandbox (port 8081), suivie de `/proxy/8501/`.
 
-**Prérequis** : Linux, Python 3.11, `curl`, un GPU NVIDIA. `ministral-3:14b` occupe environ
-13 Go de mémoire GPU (mesuré dans la sandbox). La première réponse est plus lente : Ollama
-charge le modèle en mémoire.
+```
+https://<identifiant>-8081.proxy.runpod.net/proxy/8501/
+```
+
+`run.sh` affiche cette adresse au lancement. L'identifiant figure aussi dans l'adresse de
+JupyterLab ou du VS Code web de la sandbox (`https://<identifiant>-8080.proxy.runpod.net/…`).
+Hors sandbox : http://localhost:8501.
+
+Pour passer par ce relais, `.streamlit/config.toml` désactive deux protections de Streamlit :
+CORS, sans quoi il refuse la connexion temps réel venue d'une autre adresse que la sienne, et
+XSRF, qui doit l'être en même temps et protège surtout l'envoi de fichiers, absent de cette
+application. Derrière un vrai nom de domaine, on les réactiverait.
+
+**Prérequis** : Linux, Python 3.11, `curl`, un GPU NVIDIA. `mistral-small3.2:24b` occupe environ
+15 Go de mémoire GPU avec un contexte de 8 192 tokens (mesuré dans la sandbox avec
+`ollama ps`). La première réponse est plus lente : Ollama charge le modèle en mémoire.
 
 ## Configuration
 
@@ -43,7 +56,7 @@ charge le modèle en mémoire.
 
 | Variable | Rôle |
 |---|---|
-| `OLLAMA_MODEL` | Modèle servi par Ollama : `ministral-3:14b` par défaut. |
+| `OLLAMA_MODEL` | Modèle servi par Ollama : `mistral-small3.2:24b` par défaut. |
 | `SIMULATED_TODAY` | Date du jour simulée, au format `AAAA-MM-JJ`. Les commandes de la base datent toutes de mai 2024 : sans elle, une commande expédiée serait « en route depuis deux ans ». La valeur fournie tombe début juin 2024. Variable absente : vraie date du jour. |
 
 Une variable définie dans le terminal l'emporte sur le `.env`, par exemple pour essayer un
@@ -155,6 +168,10 @@ app.py (Streamlit) ── question ──▶ agent LangChain (agent.py, create_a
     appel d'outil natif. Paramètres de génération du cours pour un bot factuel
     (`temperature=0.05`, `top_p=0.75`, `top_k=10`) ; `repeat_penalty=1.0`, car avec une
     pénalité de 1.5 le modèle déformait le nom de l'outil et l'appel échouait.
+    `mistral-small3.2:24b` a été retenu après comparaison avec `ministral-3:14b` sur le jeu
+    de test (12 novembre 2026, 3 passages) : une seule réponse inexacte sur 87 (un numéro de
+    suivi inventé), contre 7 pour le 14b, qui confondait les durées depuis l'achat et depuis
+    l'expédition, se trompait de « dernière commande » ou niait une commande existante.
 
 ## Tests
 
@@ -193,7 +210,8 @@ le dernier message.
 - **Protection des données et routage sémantique** : l'isolement entre clients est en place.
   Le **routage sémantique en amont du modèle n'est pas encore implémenté** : aujourd'hui, une
   question hors sujet atteint le modèle, qui la refuse selon son prompt.
-- **Choix du modèle** en cours d'évaluation (`ministral-3:14b` ou `mistral-small3.2:24b`).
+- `mistral-small3.2:24b` invente parfois un numéro de suivi (1 fois sur 3 lors de
+  l'évaluation du 12 novembre 2026), alors que la base n'en contient aucun.
 - **Taille du contexte** : fixée à 8 192 tokens (`num_ctx` dans `llm.py`), pour un
   comportement identique quel que soit le GPU (sans ce réglage, Ollama la choisit selon la
   mémoire du GPU). Chaque échange ajoute environ 550 tokens (estimation) : une conversation
