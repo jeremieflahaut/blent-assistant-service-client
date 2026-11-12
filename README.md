@@ -193,8 +193,11 @@ uv run python -m tests.eval.essai_prompt --repeat 3
 Le jeu de test `tests/eval/cas.json` contient 31 cas classés selon les trois étapes du
 projet, pour 5 clients de référence. Chaque réponse passe des vérifications automatiques
 (`tests/eval/verifs.py`) : aucun code de statut brut, toute date ou tout nombre cité existe
-dans les données du client, formulations attendues ou interdites. Le rapport Markdown est
-écrit dans `tests/eval/resultats/`. `--repeat` rejoue chaque cas plusieurs fois : même à
+dans les données du client, formulations attendues ou interdites. Chaque cas est joué
+comme dans l'application : une conversation avec mémoire, où s'enchaînent les messages des
+cas qui en ont plusieurs, et une réponse diffusée dont on mesure le temps jusqu'au premier
+mot. Le rapport Markdown est écrit dans `tests/eval/resultats/`. `--repeat` rejoue chaque
+cas plusieurs fois : même à
 température basse, une même question ne donne pas toujours la même réponse.
 
 Depuis le 11 novembre 2026, l'essai note tout le texte que le client voit, y compris une
@@ -207,11 +210,18 @@ commande) : chaque rapport est aussi relu à la main.
 ### Résultat et mise au point du prompt
 
 **Résultat de référence** (`mistral-small3.2:24b`, prompt v7, 12 novembre 2026, rapport
-`tests/eval/resultats/essai-agent-20261112-0830.md`) : **29/29, 28/29 et 28/29** sur les
-3 passages (cas exigés par le brief : 25/25, 24/25 et 24/25), et aucune information
-inventée dans les 87 réponses relues. Seul échec relevé : au cas 6 (« Est-ce que mes
-commandes sont payées ? »), 2 réponses sur 3 disent « Oui… toutes livrées » sans le mot
-« payées ».
+`tests/eval/resultats/essai-agent-20261112-0846.md`) : **31/31** sur chacun des 3 passages
+(cas exigés par le brief : 26/26), y compris les deux cas à plusieurs messages, joués dans
+une même conversation, et aucune information inventée dans les réponses relues. Un essai
+précédent avec le même prompt avait relevé un défaut intermittent au cas 6 (« Est-ce que
+mes commandes sont payées ? ») : 2 réponses sur 3 disaient « Oui… toutes livrées » sans le
+mot « payées ».
+
+**Temps jusqu'au premier mot** (même rapport, réponse diffusée comme dans l'application,
+GPU de la sandbox, modèle déjà chargé) : médiane **0,4 s** et maximum 1,0 s quand le modèle
+consulte les commandes ; moins de 0,1 s en médiane et 0,6 s au maximum sans appel d'outil.
+Les 99 réponses mesurées tiennent l'objectif de moins de 2 s. Un indicateur d'attente
+s'affiche de toute façon dès l'envoi de la question.
 
 Le prompt a d'abord été écrit sans exemple. Une règle ou un exemple n'a été ajouté que pour
 corriger un défaut observé lors d'un essai :
@@ -224,8 +234,6 @@ corriger un défaut observé lors d'un essai :
 | v7 | Le conseiller prend le relais, sans annoncer ce qu'il fera | Cas 15, 16 : « un conseiller va prendre le relais pour annuler votre commande » |
 | v7 | Une seule phrase pour reconnaître le mécontentement, avec un exemple | Cas 18 : plus aucune reconnaissance du mécontentement après le v6 |
 | v7 | Ne pas dire « en cours » des commandes si l'une est livrée | Cas 4, 31 : « vous avez cinq commandes en cours », dont une livrée |
-
-Les cas à plusieurs messages (29 et 30) ne sont pas encore joués par le script d'essai.
 
 ## État d'avancement et limites
 
