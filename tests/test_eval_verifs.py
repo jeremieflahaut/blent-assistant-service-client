@@ -1,8 +1,9 @@
 """Le vérificateur retrouve-t-il les verdicts déjà portés à la main ?
 
-Les réponses ci-dessous sont copiées des rapports d'essai du 14b
-(tests/eval/resultats/essai-agent-20261106-1519, -1537 et -1542), puis des essais du
-14b et du 24b du 2026-11-12 dans la sandbox (rapports non versionnés).
+Les réponses ci-dessous sont copiées des rapports d'essai du 14b et du 24b des 6 et
+12 novembre 2026. Seul le rapport de référence est gardé dans tests/eval/resultats/ ;
+les autres restent dans l'historique git (avant leur retrait, rapports
+essai-agent-20261106-*.md).
 """
 
 import json
@@ -172,7 +173,7 @@ def test_case_4_wrong_order_fails():
     assert "ordre incorrect" in failures(4, answer, C1_DATES)
 
 
-# Réponses du 24b (tests/eval/resultats/essai-agent-20261106-1615.md)
+# Réponses du 24b (essai du 2026-11-06 à 16 h 15, voir l'historique git)
 
 
 def test_case_11_invented_tracking_number_fails():
