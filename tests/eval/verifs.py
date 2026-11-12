@@ -86,7 +86,7 @@ def check(
     if unknown:
         failures.append("date absente des données du client : " + ", ".join(unknown))
 
-    allowed = known_numbers | numbers_in(case["messages"][0])
+    allowed = known_numbers | numbers_in(" ".join(case["messages"]))
     # « (2 commandes) » : un comptage, pas une donnée inventée, s'il ne dépasse pas le
     # nombre de commandes du client
     counts = re.findall(r"(\d+) commandes?\b", text)
