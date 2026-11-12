@@ -169,9 +169,10 @@ app.py (Streamlit) ── question ──▶ agent LangChain (agent.py, create_a
     (`temperature=0.05`, `top_p=0.75`, `top_k=10`) ; `repeat_penalty=1.0`, car avec une
     pénalité de 1.5 le modèle déformait le nom de l'outil et l'appel échouait.
     `mistral-small3.2:24b` a été retenu après comparaison avec `ministral-3:14b` sur le jeu
-    de test (12 novembre 2026, 3 passages) : une seule réponse inexacte sur 87 (un numéro de
-    suivi inventé), contre 7 pour le 14b, qui confondait les durées depuis l'achat et depuis
-    l'expédition, se trompait de « dernière commande » ou niait une commande existante.
+    de test, avec le même prompt (12 novembre 2026, 3 passages) : une seule réponse inexacte
+    sur 87 (un numéro de suivi inventé), contre 7 pour le 14b, qui confondait les durées
+    depuis l'achat et depuis l'expédition, se trompait de « dernière commande » ou niait une
+    commande existante.
 
 ## Tests
 
@@ -200,18 +201,42 @@ Depuis le 11 novembre 2026, l'essai note tout le texte que le client voit, y com
 phrase écrite par le modèle avant d'appeler l'outil ; les rapports antérieurs ne notaient que
 le dernier message.
 
+Le vérificateur ne voit pas tout (par exemple une vraie date rattachée à la mauvaise
+commande) : chaque rapport est aussi relu à la main.
+
+### Résultat et mise au point du prompt
+
+**Résultat de référence** (`mistral-small3.2:24b`, prompt v7, 12 novembre 2026, rapport
+`tests/eval/resultats/essai-agent-20261112-0830.md`) : **29/29, 28/29 et 28/29** sur les
+3 passages (cas exigés par le brief : 25/25, 24/25 et 24/25), et aucune information
+inventée dans les 87 réponses relues. Seul échec relevé : au cas 6 (« Est-ce que mes
+commandes sont payées ? »), 2 réponses sur 3 disent « Oui… toutes livrées » sans le mot
+« payées ».
+
+Le prompt a d'abord été écrit sans exemple. Une règle ou un exemple n'a été ajouté que pour
+corriger un défaut observé lors d'un essai :
+
+| Version | Ajout | Défaut qui l'a motivé |
+|---|---|---|
+| v6 | Désigner chaque commande par son numéro | Cas 4 : « la première, la deuxième… », impossible de savoir de quelle commande il s'agit |
+| v6 | Compassion seulement si le client se plaint | Cas 15, 16 : « je comprends votre mécontentement » en réponse à une simple demande |
+| v6 | Un exemple (few-shot) de réponse à une information absente, sans donnée recopiable | Cas 11 : numéro de suivi inventé |
+| v7 | Le conseiller prend le relais, sans annoncer ce qu'il fera | Cas 15, 16 : « un conseiller va prendre le relais pour annuler votre commande » |
+| v7 | Une seule phrase pour reconnaître le mécontentement, avec un exemple | Cas 18 : plus aucune reconnaissance du mécontentement après le v6 |
+| v7 | Ne pas dire « en cours » des commandes si l'une est livrée | Cas 4, 31 : « vous avez cinq commandes en cours », dont une livrée |
+
+Les cas à plusieurs messages (29 et 30) ne sont pas encore joués par le script d'essai.
+
 ## État d'avancement et limites
 
 - **Récupération des informations** : outil SQL, statuts traduits, exceptions (commande
   introuvable, client sans commande, date de livraison inconnue).
 - **Comportement du bot** : demande d'aide (un conseiller prend le relais), ton face à un
-  client agressif, mémoire de conversation. Encadré par le prompt, à confirmer par
-  l'évaluation.
+  client agressif, mémoire de conversation. Encadré par le prompt et vérifié par
+  l'évaluation (cas 15 à 19).
 - **Protection des données et routage sémantique** : l'isolement entre clients est en place.
   Le **routage sémantique en amont du modèle n'est pas encore implémenté** : aujourd'hui, une
   question hors sujet atteint le modèle, qui la refuse selon son prompt.
-- `mistral-small3.2:24b` invente parfois un numéro de suivi (1 fois sur 3 lors de
-  l'évaluation du 12 novembre 2026), alors que la base n'en contient aucun.
 - **Taille du contexte** : fixée à 8 192 tokens (`num_ctx` dans `llm.py`), pour un
   comportement identique quel que soit le GPU (sans ce réglage, Ollama la choisit selon la
   mémoire du GPU). Chaque échange ajoute environ 550 tokens (estimation) : une conversation
