@@ -4,8 +4,11 @@
 
 Assistant de chat qui répond aux questions d'un client authentifié sur **ses propres
 commandes** (statut, expédition, livraison, paiement), en interrogeant en temps réel une base
-SQLite. Agent LangChain, modèle open-weights (Ministral 3) servi par Ollama, interface
-Streamlit.
+SQLite. Routage sémantique par embeddings en amont, agent LangChain, modèle open-weights
+(Mistral Small 3.2) servi par Ollama, interface Streamlit.
+
+Les prompts du projet (livrable « Templates de prompts ») sont réunis dans
+[`docs/templates-prompts.md`](docs/templates-prompts.md).
 
 Projet n°3 — formation Blent LLM Engineer.
 
@@ -26,7 +29,9 @@ cd blent-assistant-service-client
    minutes) ;
 5. installe les dépendances Python dans un environnement isolé (`uv sync`, versions figées
    dans `uv.lock`) ;
-6. lance l'interface Streamlit sur le port **8501**.
+6. télécharge le modèle d'embedding du routage sémantique s'il est absent
+   (`paraphrase-multilingual:278m`, 563 Mo) ;
+7. lance l'interface Streamlit sur le port **8501**.
 
 ### Ouvrir le chat
 
@@ -48,7 +53,8 @@ application. Derrière un vrai nom de domaine, on les réactiverait.
 
 **Prérequis** : Linux, Python 3.11, `curl`, un GPU NVIDIA. `mistral-small3.2:24b` occupe environ
 15 Go de mémoire GPU avec un contexte de 8 192 tokens (mesuré dans la sandbox avec
-`ollama ps`). La première réponse est plus lente : Ollama charge le modèle en mémoire.
+`ollama ps`), plus environ 0,6 Go pour le modèle d'embedding. La première réponse est plus
+lente : Ollama charge les modèles en mémoire.
 
 ## Configuration
 
@@ -130,6 +136,7 @@ app.py (Streamlit) ── question ──▶ routage sémantique (router.py, emb
 | `customers.py` | Liste des clients pour la connexion simulée. |
 | `llm.py` | Modèle servi par Ollama (`ChatOllama`) et paramètres de génération. |
 | `config.py` | Lecture du `.env` (modèles, date du jour). |
+| `docs/templates-prompts.md` | Templates de prompts : phrases du routage, prompt système, description et résultat de l'outil. |
 
 ## Choix et hypothèses
 
@@ -238,7 +245,8 @@ uv run pytest
 Les tests n'utilisent ni GPU ni modèle : base SQLite en mémoire et faux modèle. Ils couvrent
 l'outil et l'isolement entre clients, le prompt, l'agent (diffusion de la réponse, mémoire),
 l'interface (`AppTest` de Streamlit), le routage sémantique (faux modèle d'embedding ; une
-question hors sujet n'appelle jamais le modèle de chat) et le vérificateur d'évaluation.
+question hors sujet n'appelle jamais le modèle de chat), le vérificateur d'évaluation, et
+l'accord entre `docs/templates-prompts.md` et les textes du code.
 
 ### Évaluation avec le vrai modèle
 
@@ -298,6 +306,8 @@ corriger un défaut observé lors d'un essai :
 | v7 | Ne pas dire « en cours » des commandes si l'une est livrée | Cas 4, 31 : « vous avez cinq commandes en cours », dont une livrée |
 
 ## État d'avancement et limites
+
+Les trois étapes du projet sont réalisées :
 
 - **Récupération des informations** : outil SQL, statuts traduits, exceptions (commande
   introuvable, client sans commande, date de livraison inconnue).
