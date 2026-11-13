@@ -198,7 +198,8 @@ app.py (Streamlit) ── question ──▶ routage sémantique (router.py, emb
     de test, avec le même prompt (12 novembre 2026, 3 passages) : une seule réponse inexacte
     sur 87 (un numéro de suivi inventé), contre 7 pour le 14b, qui confondait les durées
     depuis l'achat et depuis l'expédition, se trompait de « dernière commande » ou niait une
-    commande existante.
+    commande existante. Les rapports de cette comparaison n'ont pas été conservés dans le
+    dépôt.
 13. **Routage sémantique en amont du modèle de chat.** Chaque question est transformée en
     vecteur par un modèle d'embedding, puis comparée par similarité cosinus à 26 phrases de
     référence du service client (`router.py`) : statut, livraison, paiement, demandes d'aide,
@@ -225,7 +226,7 @@ app.py (Streamlit) ── question ──▶ routage sémantique (router.py, emb
       à 28 et 30) peuvent tomber d'un côté ou de l'autre : rejetées, elles reçoivent le
       message fixe ; acceptées, le modèle les refuse.
     - **Relances courtes.** Un message de quelques mots (« Oui », « Pourquoi ? », « Et la
-      37 ? ») a un score faible même quand il parle de la commande en cours : 10 des 18
+      37 ? ») a un score faible même quand il parle de la commande en cours : 11 des 18
       messages de contrôle du service client (absents du jeu de test, jamais utilisés pour
       ajuster les phrases) tombaient sous le seuil. Règle retenue : une fois qu'une question
       de la conversation a atteint le modèle de chat, un message de **3 mots au plus** le
@@ -248,6 +249,14 @@ app.py (Streamlit) ── question ──▶ routage sémantique (router.py, emb
       arrive ? » (5 mots).
     - Les phrases de référence sont des reformulations : aucune n'est une question du jeu de
       test (vérifié par un test), sinon le score serait de 1 et la mesure faussée.
+14. **Demande d'aide.** Le brief distingue la demande d'information, à laquelle le bot répond
+    depuis la base, et la demande d'aide, pour laquelle il annonce qu'un humain prend le
+    relais. Une demande d'aide est ici une demande d'**action** que le bot ne peut pas faire,
+    puisqu'il ne fait que lire : modifier ou annuler une commande, retour, remboursement,
+    réclamation, changement d'adresse ou de coordonnées. Le changement de coordonnées, que
+    le brief cite comme une demande non traitée par le bot, suit la même règle : le bot ne
+    modifie rien et annonce qu'un conseiller prend le relais, sans promettre de résultat. Le
+    bot ne propose jamais un conseiller de lui-même, pour une simple question.
 
 ## Tests
 
@@ -277,9 +286,8 @@ mot. Le rapport Markdown est écrit dans `tests/eval/resultats/`. `--repeat` rej
 cas plusieurs fois : même à
 température basse, une même question ne donne pas toujours la même réponse.
 
-Depuis le 11 novembre 2026, l'essai note tout le texte que le client voit, y compris une
-phrase écrite par le modèle avant d'appeler l'outil ; les rapports antérieurs ne notaient que
-le dernier message.
+L'essai note tout le texte que le client voit, y compris une phrase que le modèle écrirait
+avant d'appeler l'outil.
 
 Le vérificateur ne voit pas tout (par exemple une vraie date rattachée à la mauvaise
 commande) : chaque rapport est aussi relu à la main.
@@ -294,7 +302,8 @@ routeur. Le routage est mesuré à part, par `tests.eval.mesure_routage` (point 
 `tests/eval/resultats/essai-agent-20261112-0846.md`) : **31/31** sur chacun des 3 passages
 (cas exigés par le brief : 26/26), y compris les deux cas à plusieurs messages, joués dans
 une même conversation, et aucune information inventée dans les réponses relues. Un essai
-précédent avec le même prompt avait relevé un défaut intermittent au cas 6 (« Est-ce que
+précédent avec le même prompt (rapport `essai-agent-20261112-0830.md`, dans l'historique
+git du dépôt) avait relevé un défaut intermittent au cas 6 (« Est-ce que
 mes commandes sont payées ? ») : 2 réponses sur 3 disaient « Oui… toutes livrées » sans le
 mot « payées ».
 
@@ -304,7 +313,8 @@ consulte les commandes ; moins de 0,1 s en médiane et 0,6 s au maximum sans app
 Les 99 réponses mesurées tiennent l'objectif de moins de 2 s. Un indicateur d'attente
 s'affiche de toute façon dès l'envoi de la question. Ces mesures datent d'avant le routage
 sémantique, qui ajoute environ 10 ms par question (mesuré dans la sandbox le 13 novembre
-2026, modèle d'embedding chargé) : l'objectif de moins de 2 s reste tenu.
+2026, modèle d'embedding chargé) : l'objectif de moins de 2 s reste tenu, sauf au premier
+message, où les modèles se chargent en mémoire (environ 4 s pour celui d'embedding).
 
 Le prompt a d'abord été écrit sans exemple. Une règle ou un exemple n'a été ajouté que pour
 corriger un défaut observé lors d'un essai :
@@ -338,6 +348,11 @@ Les trois étapes du projet sont réalisées :
   questions hors sujet passaient alors aussi (« Raconte-moi une blague » 0,73). Le modèle
   d'embedding lit 128 tokens au plus, assez pour une question. Changer de modèle
   d'embedding ou de phrases de référence impose de mesurer de nouveau le seuil.
+- **Relance répondue de mémoire** : au cas 29 (« Où en est ma commande 37 ? », puis « Et
+  l'autre expédiée le même jour ? »), le modèle répond au deuxième message sans consulter de
+  nouveau les commandes, 3 fois sur 3, malgré la consigne du prompt. Les données citées sont
+  justes, puisque la base n'a pas changé entre les deux messages ; une commande modifiée
+  pendant la conversation ne serait en revanche pas vue avant la consultation suivante.
 - **Taille du contexte** : fixée à 8 192 tokens (`num_ctx` dans `llm.py`), pour un
   comportement identique quel que soit le GPU (sans ce réglage, Ollama la choisit selon la
   mémoire du GPU). Chaque échange ajoute environ 550 tokens (estimation) : une conversation
@@ -353,4 +368,5 @@ uv run pre-commit install     # black et flake8 avant chaque commit
 ```
 
 La CI GitHub Actions vérifie le formatage (black), le lint (flake8) et lance les tests à
-chaque push.
+chaque push. `requirements-dev.txt` exporte ces outils de développement au format `pip`
+(`uv export --only-dev --no-hashes -o requirements-dev.txt`), pour qui n'utilise pas uv.

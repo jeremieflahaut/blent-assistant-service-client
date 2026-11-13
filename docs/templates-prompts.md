@@ -1,5 +1,7 @@
 # Templates de prompts — assistant de service client
 
+Dépôt du projet : https://github.com/jeremieflahaut/blent-assistant-service-client
+
 Ce fichier réunit tout ce qui est envoyé à un modèle par l'assistant, ou comparé par lui,
 dans l'ordre où une question du client le traverse. Les textes sont recopiés du code ; un
 test (`tests/test_templates_prompts.py`) vérifie qu'ils n'en diffèrent pas.
