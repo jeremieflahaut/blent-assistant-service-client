@@ -195,7 +195,18 @@ Les dates sont déjà écrites en français et les durées calculées par le cod
 
 ## Mise au point
 
-Le prompt système a d'abord été écrit sans exemple ; chaque règle ou exemple ajouté
-ensuite corrige un défaut observé sur le jeu de test (`tests/eval/cas.json`). L'historique
-des versions et la mesure du seuil du routage sont dans le `README.md` (sections « Résultat
-et mise au point du prompt » et « Choix et hypothèses », point 13).
+Le prompt système a d'abord été écrit sans exemple. Chaque règle ou exemple ajouté ensuite
+corrige un défaut observé sur le jeu de test (`tests/eval/cas.json`) :
+
+| Règle ou exemple ajouté | Défaut qui l'a motivé |
+|---|---|
+| Désigner chaque commande par son numéro | Cas 4 : « la première, la deuxième… », impossible de savoir de quelle commande il s'agit |
+| Compassion seulement si le client se plaint | Cas 15, 16 : « je comprends votre mécontentement » en réponse à une simple demande |
+| Un exemple de réponse à une information absente, sans donnée recopiable | Cas 11 : numéro de suivi inventé |
+| Le conseiller prend le relais, sans annoncer ce qu'il fera | Cas 15, 16 : « un conseiller va prendre le relais pour annuler votre commande » |
+| Une seule phrase pour reconnaître le mécontentement, avec un exemple | Cas 18 : plus aucune reconnaissance du mécontentement |
+| Ne pas dire « en cours » des commandes si l'une est livrée | Cas 4, 31 : « vous avez cinq commandes en cours », dont une livrée |
+
+Résultat sur le jeu de test (34 cas, 3 passages) : toutes les réponses passent les
+vérifications (rapport `tests/eval/resultats/essai-agent-20261113-0819.md`). Le seuil du
+routage est mesuré avec `tests/eval/mesure_routage.py`.
