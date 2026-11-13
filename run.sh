@@ -54,7 +54,15 @@ if ! command -v uv > /dev/null; then
 fi
 uv sync
 
-# 6. Interface sur le port 8501 (réglages dans .streamlit/config.toml)
+# 6. Modèle d'embedding du routage sémantique : téléchargé s'il est absent (≈ 560 Mo).
+# Son nom vient de config.py (OLLAMA_EMBEDDING_MODEL du .env, sinon la valeur par défaut)
+EMBEDDING_MODEL=$(uv run python -c "from config import get_embedding_model_name as m; print(m())")
+if ! ollama show "$EMBEDDING_MODEL" > /dev/null 2>&1; then
+    echo "→ Téléchargement du modèle d'embedding $EMBEDDING_MODEL"
+    ollama pull "$EMBEDDING_MODEL"
+fi
+
+# 7. Interface sur le port 8501 (réglages dans .streamlit/config.toml)
 echo "→ Lancement de l'assistant avec $OLLAMA_MODEL"
 if [ -n "${RUNPOD_POD_ID:-}" ]; then
     # Cloud Sandbox : le chat s'ouvre par le relais du VS Code web (port 8081)

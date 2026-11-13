@@ -1,14 +1,18 @@
 import pytest
+import streamlit as st
 from langchain_core.messages import AIMessage
 from streamlit.testing.v1 import AppTest
 
 import llm
+import router
 from agent import customer_orders_tool
-from tests.fakes import FakeToolModel
+from router import OFF_TOPIC_ANSWER
+from tests.fakes import FakeRouter, FakeToolModel
 
 CUSTOMER = 1  # Ramona Howell dans la base de test (tests/conftest.py)
 OTHER_CUSTOMER = 2  # Ella Hampton
 ANSWER = "Votre commande a été expédiée le 23 mai 2024."
+OFF_TOPIC_QUESTION = "Quelle est la capitale de l'Australie ?"
 
 
 class BrokenModel(FakeToolModel):
@@ -31,6 +35,17 @@ def fake_model(monkeypatch):
         )
     )
     monkeypatch.setattr(llm, "build_model", lambda: model)
+
+
+@pytest.fixture(autouse=True)
+def fake_router(monkeypatch) -> FakeRouter:
+    """Routeur sans modèle d'embedding : seule OFF_TOPIC_QUESTION est hors sujet."""
+    fake = FakeRouter((OFF_TOPIC_QUESTION,))
+    monkeypatch.setattr(router, "build_router", lambda: fake)
+    # L'application garde son routeur en cache (st.cache_resource) : chaque test repart
+    # d'un cache vide pour utiliser le routeur qu'il a choisi
+    st.cache_resource.clear()
+    return fake
 
 
 def start_app() -> AppTest:
@@ -156,3 +171,59 @@ def test_next_customer_sees_nothing_of_the_previous_conversation(monkeypatch):
     assert "Ella Hampton" in seen
     assert "Ramona" not in seen
     assert "Question d'Ella" in seen
+
+
+def test_off_topic_question_never_reaches_the_model(monkeypatch):
+    model = chat_model(monkeypatch, ["Ne doit pas être utilisé."])
+    app = start_chat()
+    app.chat_input[0].set_value(OFF_TOPIC_QUESTION).run()
+
+    assert model.calls == []
+    assert app.chat_message[1].markdown[0].value == OFF_TOPIC_ANSWER
+    assert len(app.status) == 0
+    assert app.session_state.messages == [
+        {"role": "user", "content": OFF_TOPIC_QUESTION},
+        {"role": "assistant", "content": OFF_TOPIC_ANSWER},
+    ]
+
+
+def test_off_topic_question_stays_out_of_the_model_memory(monkeypatch):
+    model = chat_model(monkeypatch, ["Réponse."])
+    app = start_chat()
+    app.chat_input[0].set_value(OFF_TOPIC_QUESTION).run()
+    app.chat_input[0].set_value("Où en est ma commande ?").run()
+
+    seen = [m.text for m in model.calls[-1] if m.type in ("human", "ai")]
+    assert seen == ["Où en est ma commande ?"]
+
+
+def test_router_failure_shows_clean_message(monkeypatch):
+    def broken_router():
+        raise ConnectionError("Failed to connect to Ollama at http://127.0.0.1:11434")
+
+    monkeypatch.setattr(router, "build_router", broken_router)
+    app = start_chat()
+    app.chat_input[0].set_value("Où en est ma commande ?").run()
+
+    assert len(app.exception) == 0
+    assert "Désolé" in app.error[0].value
+    assert "Ollama" not in app.error[0].value
+
+
+def test_short_follow_ups_only_after_a_question_reached_the_model(fake_router):
+    app = start_chat()
+    app.chat_input[0].set_value(OFF_TOPIC_QUESTION).run()  # rejetée
+    app.chat_input[0].set_value("Où en est ma commande ?").run()  # atteint le modèle
+    app.chat_input[0].set_value("Et la 37 ?").run()
+
+    assert fake_router.follow_ups == [False, False, True]
+
+
+def test_new_conversation_forgets_the_follow_up(fake_router):
+    app = start_chat()
+    app.chat_input[0].set_value("Où en est ma commande ?").run()
+    app.button[0].click().run()  # Nouvelle conversation
+    app.selectbox[0].select(CUSTOMER).run()
+    app.chat_input[0].set_value("Oui").run()
+
+    assert fake_router.follow_ups == [False, False]

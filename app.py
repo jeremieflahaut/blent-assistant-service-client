@@ -8,6 +8,7 @@ from agent import build_agent, stream_reply
 from config import get_today
 from customers import list_customers
 from llm import build_model
+from router import OFF_TOPIC_ANSWER, build_router
 
 # Indicateurs d'attente : le premier passage du modèle (décider d'appeler l'outil) peut
 # durer plusieurs secondes sans qu'aucun mot ne s'affiche
@@ -21,6 +22,14 @@ ERROR_MESSAGE = (
 )
 
 st.title("Service client")
+
+
+@st.cache_resource
+def get_router():
+    # Un seul routeur pour toute l'application : les phrases de référence ne sont
+    # encodées qu'une fois, au premier message
+    return build_router()
+
 
 customers = {customer["user_id"]: customer for customer in list_customers()}
 
@@ -102,7 +111,17 @@ if question := st.chat_input("Votre question sur vos commandes…"):
         waiting = st.empty()
         spinner = waiting.status(PROCESSING)
         try:
-            answer = st.write_stream(answer_text(question, waiting, spinner))
+            # Une question est déjà passée par le modèle : une relance courte le rejoint
+            follow_up = st.session_state.get("model_reached", False)
+            if get_router().is_customer_service(question, follow_up=follow_up):
+                st.session_state.model_reached = True
+                answer = st.write_stream(answer_text(question, waiting, spinner))
+            else:
+                # Routage sémantique : la question hors sujet n'atteint pas le modèle de
+                # chat ni sa mémoire, le code répond seul
+                waiting.empty()
+                answer = OFF_TOPIC_ANSWER
+                st.markdown(answer)
         except Exception:
             logging.exception("L'agent n'a pas pu répondre")
             answer = None
