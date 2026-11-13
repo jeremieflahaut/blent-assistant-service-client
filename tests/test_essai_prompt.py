@@ -12,7 +12,6 @@ TOOL_CALL = {"name": customer_orders_tool.name, "args": {}, "id": "call_1"}
 
 
 def test_answer_includes_text_written_before_the_tool_call():
-    # Le client voit aussi la phrase écrite avant l'appel d'outil : elle doit être notée
     model = FakeToolModel(
         messages=iter(
             [
@@ -53,8 +52,6 @@ def test_messages_of_a_case_share_one_conversation():
         "Votre commande 13 a été expédiée.",
         "Elle n'est pas encore livrée.",
     ]
-    # Les appels d'outil sont comptés message par message
     assert [turn["tool_calls"] for turn in turns] == [["get_customer_orders({})"], []]
-    # Au 2e message, le modèle voit la première question (mémoire)
     seen = [m.text for m in model.calls[-1] if m.type == "human"]
     assert seen == ["Où en est ma commande ?", "Et la livraison ?"]

@@ -33,10 +33,9 @@ def build_agent(
     today: date,
     checkpointer: BaseCheckpointSaver | None = None,
 ):
-    """Agent d'une conversation : le prompt système porte le nom du client.
+    """Crée l'agent d'une conversation, avec le nom du client dans le prompt.
 
-    Avec un checkpointer, l'agent garde l'historique de chaque conversation, repérée
-    par son thread_id (cours 06.2).
+    Avec un checkpointer, l'agent garde l'historique de la conversation (thread_id).
     """
     return create_agent(
         model,
@@ -61,7 +60,7 @@ def stream_reply(
     demande l'outil, pour afficher un indicateur d'attente. thread_id désigne la
     conversation dont l'agent retrouve l'historique.
     """
-    text_step = None  # passe du modèle qui a écrit le dernier texte
+    text_step = None
     for chunk, metadata in agent.stream(
         {"messages": [{"role": "user", "content": question}]},
         config={"configurable": {"thread_id": thread_id}},
@@ -73,8 +72,6 @@ def stream_reply(
         if chunk.tool_call_chunks:
             on_tool_call()
         if chunk.text:
-            # Texte écrit avant l'appel d'outil puis réponse finale : deux passes du
-            # modèle, séparées par une ligne vide au lieu d'être collées
             if text_step is not None and metadata["langgraph_step"] != text_step:
                 yield "\n\n"
             text_step = metadata["langgraph_step"]

@@ -11,16 +11,12 @@ from pydantic import Field
 class FakeToolModel(GenericFakeChatModel):
     """Faux modèle qui rejoue des réponses écrites d'avance, sans GPU."""
 
-    # Messages reçus à chaque appel en streaming : ce que le modèle « voit »
     calls: list = Field(default_factory=list)
 
     def bind_tools(self, tools, **kwargs):
-        # create_agent attache les outils au modèle : le faux modèle n'en fait rien
         return self
 
     def _stream(self, messages, stop=None, run_manager=None, **kwargs):
-        # En streaming, le faux modèle de LangChain perd les appels d'outil. Comme
-        # Ollama : le texte mot par mot, puis l'appel d'outil en un seul morceau
         self.calls.append(messages)
         message = next(self.messages)
         for token in re.split(r"(\s)", message.content):
@@ -46,7 +42,6 @@ class FakeRouter:
 
     def __init__(self, off_topic: tuple[str, ...] = ()):
         self.off_topic = off_topic
-        # Valeur de follow_up reçue pour chaque question, dans l'ordre
         self.follow_ups: list[bool] = []
 
     def is_customer_service(self, question: str, follow_up: bool = False) -> bool:

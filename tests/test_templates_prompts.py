@@ -40,4 +40,4 @@ def test_tool_description_is_copied():
 
 
 def test_templates_fit_the_upload_limit():
-    assert TEMPLATES.stat().st_size < 3 * 1024 * 1024  # 3 Mo, limite de la plateforme
+    assert TEMPLATES.stat().st_size < 3 * 1024 * 1024

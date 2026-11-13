@@ -10,12 +10,8 @@ from customers import list_customers
 from llm import build_model
 from router import OFF_TOPIC_ANSWER, build_router
 
-# Indicateurs d'attente : le premier passage du modèle (décider d'appeler l'outil) peut
-# durer plusieurs secondes sans qu'aucun mot ne s'affiche
 PROCESSING = "Votre demande est en cours de traitement…"
 CHECKING_ORDERS = "Je consulte vos commandes…"
-# Message fixe : le détail d'une erreur (chemin de la base, adresse du serveur Ollama)
-# ne doit jamais apparaître dans la conversation
 ERROR_MESSAGE = (
     "Désolé, je ne peux pas vous répondre pour le moment. "
     "Merci de réessayer dans quelques instants."
@@ -26,8 +22,6 @@ st.title("Service client")
 
 @st.cache_resource
 def get_router():
-    # Un seul routeur pour toute l'application : les phrases de référence ne sont
-    # encodées qu'une fois, au premier message
     return build_router()
 
 
@@ -40,7 +34,6 @@ def customer_label(user_id: int) -> str:
 
 
 def new_conversation() -> None:
-    # Tout ce qui a été stocké pour le client précédent disparaît
     st.session_state.clear()
 
 
@@ -57,7 +50,6 @@ with st.sidebar:
             st.session_state.user_id = choice
             st.rerun()
     else:
-        # Verrou : plus de liste, seul le bouton permet de changer de client
         st.write(f"Client connecté : {customer_label(st.session_state.user_id)}")
         st.button("Nouvelle conversation", on_click=new_conversation)
 
@@ -65,9 +57,6 @@ if "user_id" not in st.session_state:
     st.info("Choisissez un client dans le menu de gauche pour commencer.")
     st.stop()
 
-# Un agent par conversation : son prompt système porte le nom du client, et sa mémoire
-# (InMemorySaver) ne contient que cette conversation. « Nouvelle conversation » efface
-# l'agent avec le reste de la session : rien ne passe d'un client à l'autre.
 if "agent" not in st.session_state:
     customer = customers[st.session_state.user_id]
     st.session_state.agent = build_agent(
@@ -107,18 +96,14 @@ if question := st.chat_input("Votre question sur vos commandes…"):
         st.markdown(question)
 
     with st.chat_message("assistant"):
-        # st.status : un spinner dont le texte peut changer en cours de route
         waiting = st.empty()
         spinner = waiting.status(PROCESSING)
         try:
-            # Une question est déjà passée par le modèle : une relance courte le rejoint
             follow_up = st.session_state.get("model_reached", False)
             if get_router().is_customer_service(question, follow_up=follow_up):
                 st.session_state.model_reached = True
                 answer = st.write_stream(answer_text(question, waiting, spinner))
             else:
-                # Routage sémantique : la question hors sujet n'atteint pas le modèle de
-                # chat ni sa mémoire, le code répond seul
                 waiting.empty()
                 answer = OFF_TOPIC_ANSWER
                 st.markdown(answer)

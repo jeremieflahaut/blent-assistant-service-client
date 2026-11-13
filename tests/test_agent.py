@@ -8,7 +8,6 @@ from langgraph.checkpoint.memory import InMemorySaver
 from agent import Context, build_agent, customer_orders_tool, stream_reply
 from tests.fakes import FakeToolModel
 
-# Clients de la base de test (tests/conftest.py)
 CUSTOMER_WITH_ORDERS = 1
 OTHER_CUSTOMER = 2
 
@@ -46,7 +45,6 @@ def test_tool_reads_session_customer():
 
 
 def test_tool_ignores_user_id_sent_by_model():
-    # Injection : le modèle tente de lire les commandes d'un autre client
     result = run_tool_call({"user_id": OTHER_CUSTOMER}, CUSTOMER_WITH_ORDERS)
 
     assert [order["order_id"] for order in result] == [12, 13, 10]
@@ -78,7 +76,6 @@ def test_stream_reply_shows_only_the_model_answer():
         ]
     )
 
-    # Le résultat de l'outil (commandes brutes, codes de statut) n'est pas diffusé
     assert text == "Votre commande a été expédiée."
     assert tool_calls == 1
 
@@ -93,7 +90,6 @@ def test_stream_reply_without_tool_call_shows_no_waiting_indicator():
 
 
 def test_stream_reply_separates_text_written_before_the_tool_call():
-    # Défaut vu avec ministral-3:3b : une phrase avant l'appel d'outil, puis la réponse
     tool_call = {"name": customer_orders_tool.name, "args": {}, "id": "call_1"}
 
     text, _ = stream_answer(

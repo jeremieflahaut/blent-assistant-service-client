@@ -20,10 +20,9 @@ def get_model_name() -> str:
 
 
 def get_embedding_model_name() -> str:
-    """Modèle d'embedding du routage sémantique, servi par Ollama.
+    """Modèle d'embedding du routage, servi par Ollama.
 
-    paraphrase-multilingual : même famille sentence-transformers que le modèle des
-    cours (paraphrase-multilingual-MiniLM-L12-v2), en plus grand ; le modèle des cours
-    n'est pas proposé par Ollama. OLLAMA_EMBEDDING_MODEL permet d'en changer.
+    On peut le changer avec OLLAMA_EMBEDDING_MODEL, mais il faut alors remesurer le
+    seuil du routeur.
     """
     return os.getenv("OLLAMA_EMBEDDING_MODEL") or "paraphrase-multilingual:278m"

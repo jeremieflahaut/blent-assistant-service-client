@@ -38,7 +38,6 @@ from tools import french_date, get_customer_orders
 
 EVAL_DIR = Path(__file__).parent
 THREAD_ID = "essai"
-# Objectif de temps de réponse (retenu le 2026-10-08) : premier mot en moins de 2 s
 FIRST_WORD_TARGET = 2.0
 
 
@@ -52,7 +51,7 @@ def run_turn(agent, user_id: int, question: str) -> dict:
             if first_word is None:
                 first_word = time.perf_counter() - start
             chunks.append(text)
-    except Exception as error:  # un cas en erreur ne doit pas arrêter l'essai
+    except Exception as error:
         return {
             "question": question,
             "duration": time.perf_counter() - start,
@@ -62,7 +61,6 @@ def run_turn(agent, user_id: int, question: str) -> dict:
         }
     duration = time.perf_counter() - start
 
-    # Appels d'outil de ce message : ceux du modèle depuis la dernière question
     config = {"configurable": {"thread_id": THREAD_ID}}
     messages = agent.get_state(config).values["messages"]
     last = max(i for i, m in enumerate(messages) if isinstance(m, HumanMessage))
@@ -76,8 +74,6 @@ def run_turn(agent, user_id: int, question: str) -> dict:
             if isinstance(message, AIMessage)
             for call in message.tool_calls
         ],
-        # Tout ce que le client voit à l'écran, y compris le texte écrit avant l'appel
-        # d'outil (« je vais vérifier… »)
         "answer": "".join(chunks),
     }
 
@@ -223,8 +219,6 @@ def main() -> None:
     path.parent.mkdir(exist_ok=True)
 
     models = [build_model(seed=seed) for seed in range(1, args.repeat + 1)]
-    # Préchauffage : le premier appel charge le modèle en mémoire, ce qui fausserait le
-    # temps jusqu'au premier mot des premières réponses
     print("Chargement du modèle…")
     models[0].invoke("Bonjour")
 
@@ -235,7 +229,6 @@ def main() -> None:
         runs = []
         for model in models:
             turns = run_case(model, customer, case["messages"], today)
-            # Seule la dernière réponse est notée (une erreur arrête la conversation)
             last = turns[-1]
             failures = check(
                 case,
@@ -250,7 +243,7 @@ def main() -> None:
         rows.append((case, runs))
         passed = sum(not run["failures"] for run in runs)
         print(f"Cas {case['id']} : {passed}/{len(runs)} réussite(s)")
-        write_report(path, today, args.repeat, rows)  # réécrit à chaque cas
+        write_report(path, today, args.repeat, rows)
 
     for index in range(args.repeat):
         print(f"Score, répétition {index + 1} : {score_line(rows, index)}")

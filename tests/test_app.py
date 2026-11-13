@@ -9,8 +9,8 @@ from agent import customer_orders_tool
 from router import OFF_TOPIC_ANSWER
 from tests.fakes import FakeRouter, FakeToolModel
 
-CUSTOMER = 1  # Ramona Howell dans la base de test (tests/conftest.py)
-OTHER_CUSTOMER = 2  # Ella Hampton
+CUSTOMER = 1
+OTHER_CUSTOMER = 2
 ANSWER = "Votre commande a été expédiée le 23 mai 2024."
 OFF_TOPIC_QUESTION = "Quelle est la capitale de l'Australie ?"
 
@@ -42,15 +42,11 @@ def fake_router(monkeypatch) -> FakeRouter:
     """Routeur sans modèle d'embedding : seule OFF_TOPIC_QUESTION est hors sujet."""
     fake = FakeRouter((OFF_TOPIC_QUESTION,))
     monkeypatch.setattr(router, "build_router", lambda: fake)
-    # L'application garde son routeur en cache (st.cache_resource) : chaque test repart
-    # d'un cache vide pour utiliser le routeur qu'il a choisi
     st.cache_resource.clear()
     return fake
 
 
 def start_app() -> AppTest:
-    # 10 s au lieu de 3 : le premier lancement compile les modules LangChain importés
-    # par l'application (dépassement constaté en local)
     return AppTest.from_file("../app.py", default_timeout=10).run()
 
 
@@ -96,7 +92,7 @@ def test_question_gets_streamed_answer():
 
     assert [message.name for message in app.chat_message] == ["user", "assistant"]
     assert app.chat_message[1].markdown[0].value == ANSWER
-    assert len(app.status) == 0  # le spinner a disparu
+    assert len(app.status) == 0
     assert app.session_state.messages == [
         {"role": "user", "content": "Où en est ma commande ?"},
         {"role": "assistant", "content": ANSWER},
@@ -121,7 +117,6 @@ def test_technical_error_shows_clean_message(monkeypatch):
     assert len(app.status) == 0
     assert "Désolé" in app.error[0].value
     assert "Ollama" not in app.error[0].value
-    # La question reste affichée, aucune réponse n'est enregistrée
     assert app.session_state.messages == [
         {"role": "user", "content": "Où en est ma commande ?"}
     ]
@@ -160,13 +155,12 @@ def test_bot_remembers_the_conversation(monkeypatch):
 
 def test_next_customer_sees_nothing_of_the_previous_conversation(monkeypatch):
     model = chat_model(monkeypatch, ["Réponse pour Ramona.", "Réponse pour Ella."])
-    app = start_chat()  # Ramona Howell
+    app = start_chat()
     app.chat_input[0].set_value("Question de Ramona").run()
-    app.button[0].click().run()  # Nouvelle conversation
-    app.selectbox[0].select(OTHER_CUSTOMER).run()  # Ella Hampton
+    app.button[0].click().run()
+    app.selectbox[0].select(OTHER_CUSTOMER).run()
     app.chat_input[0].set_value("Question d'Ella").run()
 
-    # Tout ce que le modèle reçoit pour Ella, prompt système compris
     seen = " ".join(m.text for m in model.calls[-1])
     assert "Ella Hampton" in seen
     assert "Ramona" not in seen
@@ -212,8 +206,8 @@ def test_router_failure_shows_clean_message(monkeypatch):
 
 def test_short_follow_ups_only_after_a_question_reached_the_model(fake_router):
     app = start_chat()
-    app.chat_input[0].set_value(OFF_TOPIC_QUESTION).run()  # rejetée
-    app.chat_input[0].set_value("Où en est ma commande ?").run()  # atteint le modèle
+    app.chat_input[0].set_value(OFF_TOPIC_QUESTION).run()
+    app.chat_input[0].set_value("Où en est ma commande ?").run()
     app.chat_input[0].set_value("Et la 37 ?").run()
 
     assert fake_router.follow_ups == [False, False, True]
@@ -222,7 +216,7 @@ def test_short_follow_ups_only_after_a_question_reached_the_model(fake_router):
 def test_new_conversation_forgets_the_follow_up(fake_router):
     app = start_chat()
     app.chat_input[0].set_value("Où en est ma commande ?").run()
-    app.button[0].click().run()  # Nouvelle conversation
+    app.button[0].click().run()
     app.selectbox[0].select(CUSTOMER).run()
     app.chat_input[0].set_value("Oui").run()
 

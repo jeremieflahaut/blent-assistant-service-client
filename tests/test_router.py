@@ -19,9 +19,9 @@ def make_router(threshold: float = 0.56) -> SemanticRouter:
 
 
 def test_cosine_similarity():
-    assert math.isclose(cosine_similarity([1, 2], [2, 4]), 1.0)  # même direction
-    assert math.isclose(cosine_similarity([1, 0], [0, 3]), 0.0)  # sans rapport
-    assert math.isclose(cosine_similarity([1, 0], [-1, 0]), -1.0)  # opposés
+    assert math.isclose(cosine_similarity([1, 2], [2, 4]), 1.0)
+    assert math.isclose(cosine_similarity([1, 0], [0, 3]), 0.0)
+    assert math.isclose(cosine_similarity([1, 0], [-1, 0]), -1.0)
 
 
 def test_customer_service_question_is_accepted():
@@ -55,13 +55,11 @@ def test_examples_are_encoded_once():
     router.is_customer_service("Où en est ma commande ?")
     router.is_customer_service("Quelle est la capitale de l'Australie ?")
 
-    assert embeddings.documents_calls == 1  # à la création du routeur
-    assert embeddings.query_calls == 2  # une fois par question
+    assert embeddings.documents_calls == 1
+    assert embeddings.query_calls == 2
 
 
 def test_reference_examples_are_not_test_questions():
-    # Une question du jeu de test parmi les exemples aurait un score de 1 : la mesure du
-    # seuil (tests/eval/mesure_routage.py) serait faussée
     cases_file = Path(__file__).parent / "eval" / "cas.json"
     cases = json.loads(cases_file.read_text(encoding="utf-8"))["cas"]
     questions = {message for case in cases for message in case["messages"]}
@@ -80,7 +78,7 @@ def test_short_follow_up_passes_without_routing():
     router = SemanticRouter(embeddings, examples=EXAMPLES)
 
     assert router.is_customer_service("Et la 37 ?", follow_up=True)
-    assert embeddings.query_calls == 0  # aucun calcul de similarité
+    assert embeddings.query_calls == 0
 
 
 def test_short_message_is_routed_at_the_start_of_a_conversation():

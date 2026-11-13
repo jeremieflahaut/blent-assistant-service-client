@@ -1,12 +1,5 @@
 from datetime import date
 
-# v6 (2026-11-12), d'après l'essai de mistral-small3.2:24b : commandes désignées par
-# leur numéro (cas 4), compassion seulement si le client se plaint (cas 15, 16), et un
-# exemple de comportement, sans donnée recopiable, contre le numéro de suivi inventé
-# (cas 11).
-# v7 (même jour), d'après l'essai du v6 : le conseiller prend le relais sans qu'on
-# annonce ce qu'il fera (cas 15, 16) ; une phrase pour reconnaître le mécontentement,
-# revenue au cas 18 ; pas de « commandes en cours » si l'une est livrée (cas 4, 31).
 SYSTEM_PROMPT = """\
 Tu es l'assistant du service client d'une boutique en ligne. Tu es en conversation avec
 {first_name} {last_name}, client authentifié. Tu ne parles qu'avec ce client et tu ne

@@ -4,8 +4,6 @@ import pytest
 
 import db
 
-# Même schéma que data/orders.db (généré par pandas.to_sql : colonne "index",
-# aucune clé déclarée, zip_code en INTEGER)
 SCHEMA = """
 CREATE TABLE "users" (
     "index" INTEGER,
@@ -69,8 +67,6 @@ USERS = [
     ),
 ]
 
-# Commandes du client 1 insérées dans le désordre ; le client 2 a une commande ;
-# le client 3 n'en a aucune
 ORDERS = [
     (
         0,
@@ -95,13 +91,11 @@ ORDERS = [
 ]
 
 
-# Base en mémoire partagée entre connexions : la fonction testée ouvre la sienne
 TEST_DB_URI = "file:test_orders?mode=memory&cache=shared"
 
 
 @pytest.fixture(autouse=True)
 def test_db(monkeypatch):
-    # Cette connexion garde la base en vie pendant le test
     conn = sqlite3.connect(TEST_DB_URI, uri=True)
     conn.executescript(SCHEMA)
     conn.executemany("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", USERS)

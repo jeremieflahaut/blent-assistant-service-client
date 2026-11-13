@@ -5,7 +5,6 @@ import pytest
 import tools
 from tools import french_date, get_customer_orders
 
-# Clients de la base de test (tests/conftest.py)
 CUSTOMER_WITH_ORDERS = 1
 OTHER_CUSTOMER = 2
 CUSTOMER_WITHOUT_ORDER = 3
@@ -50,7 +49,6 @@ def test_no_internal_identifier_returned():
 
 
 def test_days_since_each_date(monkeypatch):
-    # Commande 10 : achat le 6 mai, expédition le 8 mai, livraison le 22 mai 2024
     monkeypatch.setenv("SIMULATED_TODAY", "2024-06-01")
     orders = get_customer_orders(CUSTOMER_WITH_ORDERS)
 

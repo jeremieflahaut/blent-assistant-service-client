@@ -1,7 +1,7 @@
 from llm import build_model
 
 
-def test_model_uses_env_name_and_course_settings(monkeypatch):
+def test_model_uses_env_name_and_default_settings(monkeypatch):
     monkeypatch.setenv("OLLAMA_MODEL", "ministral-3:3b")
 
     model = build_model()

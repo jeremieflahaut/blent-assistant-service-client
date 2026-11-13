@@ -1,8 +1,8 @@
-"""Routage sémantique en amont du modèle de chat.
+"""Routage sémantique avant le modèle de chat.
 
-La question du client est transformée en vecteur (embedding), puis comparée par
-similarité cosinus à des phrases de référence du service client. Sous le seuil, la
-question est hors sujet : le code répond seul, le modèle de chat ne la reçoit jamais.
+On transforme la question en vecteur (embedding) et on la compare aux phrases de
+référence avec la similarité cosinus. Si le score est trop bas, la question est hors
+sujet et le modèle de chat n'est pas appelé.
 """
 
 import math
@@ -12,17 +12,8 @@ from langchain_ollama import OllamaEmbeddings
 
 from config import get_embedding_model_name
 
-# Seuil mesuré avec tests/eval/mesure_routage.py (paraphrase-multilingual:278m) : au
-# milieu de l'écart entre le meilleur score d'une question hors sujet (0,535) et le plus
-# faible d'une question du service client du jeu de test (0,633). À mesurer de nouveau
-# si le modèle d'embedding ou les phrases de référence changent.
 THRESHOLD = 0.58
 
-# Demandes que le bot doit recevoir : information (statut, livraison, paiement), aide
-# (modifier, annuler, réclamer : le bot passe la main à un conseiller),
-# mécontentement, politesse et relances courtes d'une conversation en cours. Ce sont
-# des reformulations : aucune n'est une question du jeu de test, sinon la mesure du
-# seuil serait faussée (vérifié par tests/test_router.py).
 CUSTOMER_SERVICE_EXAMPLES = [
     "Quel est le statut de ma commande ?",
     "Ma commande a-t-elle été expédiée ?",
@@ -52,14 +43,8 @@ CUSTOMER_SERVICE_EXAMPLES = [
     "Et l'autre commande ?",
 ]
 
-# Relance courte (« Oui », « Pourquoi ? », « Et la 37 ? ») : trop peu de mots pour juger
-# le sujet, son score est faible même quand elle concerne la commande dont on parle. Une
-# fois qu'une question est passée par le modèle de chat, un message de 3 mots au plus le
-# rejoint sans routage ; s'il est hors sujet, le modèle le refuse (consignes du prompt).
-# Limite mesurée avec tests/eval/mesure_routage.py : voir le README.
 SHORT_FOLLOW_UP_WORDS = 3
 
-# Réponse écrite par le code, sans appel au modèle de chat
 OFF_TOPIC_ANSWER = (
     "Je suis l'assistant du service client : je peux seulement répondre à vos "
     "questions sur vos commandes (suivi, livraison, paiement)."
@@ -67,12 +52,12 @@ OFF_TOPIC_ANSWER = (
 
 
 def word_count(text: str) -> int:
-    """Nombre de mots, sans la ponctuation isolée (« ? », « ! »)."""
+    """Compte les mots, sans la ponctuation seule comme "?"."""
     return sum(1 for token in text.split() if any(char.isalnum() for char in token))
 
 
 def cosine_similarity(a: list[float], b: list[float]) -> float:
-    """Cosinus de l'angle entre deux vecteurs : 1 = même direction, 0 = sans rapport."""
+    """Similarité cosinus entre deux vecteurs (1 si même direction)."""
     dot = sum(x * y for x, y in zip(a, b))
     norm_a = math.sqrt(sum(x * x for x in a))
     norm_b = math.sqrt(sum(y * y for y in b))
@@ -80,7 +65,7 @@ def cosine_similarity(a: list[float], b: list[float]) -> float:
 
 
 class SemanticRouter:
-    """Décide si une question concerne le service client, sans le modèle de chat."""
+    """Dit si une question concerne le service client."""
 
     def __init__(
         self,
@@ -91,11 +76,10 @@ class SemanticRouter:
         self.embeddings = embeddings
         self.examples = examples
         self.threshold = threshold
-        # Les exemples sont encodés une seule fois, à la création du routeur
         self.example_vectors = embeddings.embed_documents(examples)
 
     def closest_example(self, question: str) -> tuple[float, str]:
-        """Meilleur score de similarité, et la phrase de référence qui l'obtient."""
+        """Renvoie le meilleur score et l'exemple le plus proche."""
         vector = self.embeddings.embed_query(question)
         return max(
             (cosine_similarity(vector, example_vector), example)
@@ -103,8 +87,7 @@ class SemanticRouter:
         )
 
     def is_customer_service(self, question: str, follow_up: bool = False) -> bool:
-        """follow_up : une question précédente de la conversation a atteint le modèle
-        de chat."""
+        """follow_up vaut True si le modèle a déjà répondu dans la conversation."""
         if follow_up and word_count(question) <= SHORT_FOLLOW_UP_WORDS:
             return True
         score, _ = self.closest_example(question)
@@ -112,5 +95,5 @@ class SemanticRouter:
 
 
 def build_router() -> SemanticRouter:
-    """Routeur de l'application : modèle d'embedding servi par Ollama."""
+    """Crée le routeur avec le modèle d'embedding d'Ollama."""
     return SemanticRouter(OllamaEmbeddings(model=get_embedding_model_name()))

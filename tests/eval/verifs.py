@@ -74,7 +74,6 @@ def check(
         if find(text, term) >= 0:
             failures.append(f"contient : {term}")
 
-    # Chaque élément de « dans_l_ordre » est une liste de formulations équivalentes
     positions = []
     for alternatives in verifs.get("dans_l_ordre", []):
         found = [find(text, term) for term in alternatives if find(text, term) >= 0]
@@ -87,8 +86,6 @@ def check(
         failures.append("date absente des données du client : " + ", ".join(unknown))
 
     allowed = known_numbers | numbers_in(" ".join(case["messages"]))
-    # « (2 commandes) » : un comptage, pas une donnée inventée, s'il ne dépasse pas le
-    # nombre de commandes du client
     counts = re.findall(r"(\d+) commandes?\b", text)
     allowed |= {str(int(n)) for n in counts if int(n) <= order_count}
     unknown = numbers_in(answer) - allowed

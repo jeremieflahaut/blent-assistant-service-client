@@ -17,7 +17,6 @@ DATA = json.loads(
 CASES = {case["id"]: case for case in DATA["cas"]}
 FORBIDDEN = DATA["interdits_globaux"]
 
-# Dates réelles des clients de cas.json (achat, expédition, livraison) + date du jour
 TODAY = {"1 juin"}
 C1_DATES = {
     "30 mai",
@@ -44,8 +43,6 @@ C4_DATES = {
     "5 mai",
     "20 mai",
 } | TODAY
-# Nombres présents dans les données des mêmes clients (sortie de l'outil au 1er juin
-# 2024 : numéros de commande, jours, années, durées), + le nombre de commandes
 C1_NUMBERS = set(
     "1 2 5 6 7 8 9 12 13 14 16 18 19 20 22 23 24 25 26 30 34 37 42 51 2024".split()
 )
@@ -60,7 +57,6 @@ NUMBERS = {
     id(C3_DATES): C3_NUMBERS,
     id(C4_DATES): C4_NUMBERS,
 }
-# Nombre de commandes de chaque client
 ORDER_COUNTS = {id(C1_DATES): 5, id(C2_DATES): 0, id(C3_DATES): 1, id(C4_DATES): 5}
 TOOL = ["get_customer_orders({})"]
 
@@ -173,9 +169,6 @@ def test_case_4_wrong_order_fails():
     assert "ordre incorrect" in failures(4, answer, C1_DATES)
 
 
-# Réponses du 24b (essai du 2026-11-06 à 16 h 15, voir l'historique git)
-
-
 def test_case_11_invented_tracking_number_fails():
     for answer in (
         "Votre commande 42 a été expédiée le 26 mai 2024. Son numéro de suivi est "
@@ -227,9 +220,6 @@ def test_case_13_number_from_question_passes():
     assert failures(13, answer, C1_DATES) == []
 
 
-# Cas modifiés ou ajoutés (adresse retirée, question imprécise)
-
-
 def test_case_7_denying_existing_order_fails():
     answer = (
         "Je ne connais pas d'information concernant la commande avec ce numéro dans "
@@ -258,11 +248,7 @@ def test_case_31_estimate_fails():
     assert failures(31, answer, C1_DATES, tool_calls=[])
 
 
-# Essais du 2026-11-12 (sandbox)
-
-
 def test_case_6_count_of_orders_passes():
-    # 14b : Bruno Mclean a bien deux commandes passées le 5 mai
     answer = (
         "Oui, Bruno Mclean, toutes vos commandes sont payées.\n"
         "- **Commande du 5 mai 2024** (2 commandes) : livrées les 23 et 20 mai 2024."
@@ -276,7 +262,6 @@ def test_count_above_number_of_orders_fails():
 
 
 def test_case_9_purchase_date_and_yesterday_pass():
-    # 14b : la commande 66 a été passée le 22 mai et livrée le 31 mai, la veille
     answer = (
         "Votre dernière commande, passée le 22 mai 2024, est bien livrée depuis hier."
     )
@@ -284,7 +269,6 @@ def test_case_9_purchase_date_and_yesterday_pass():
 
 
 def test_case_14_does_not_exist_in_account_passes():
-    # 24b
     answer = "Ashton Frederick, la commande 13 n'existe pas dans votre compte."
     assert failures(14, answer, C1_DATES) == []
 
@@ -295,7 +279,6 @@ def test_case_10_does_not_exist_for_existing_order_fails():
 
 
 def test_case_18_unrequested_advisor_fails():
-    # 14b : le client ne demande aucune action
     answer = (
         "Votre commande **22** est en attente d'expédition depuis le 30 mai 2024.\n"
         "Votre commande **51** vous a été livrée le 18 mai 2024.\n"
@@ -305,7 +288,6 @@ def test_case_18_unrequested_advisor_fails():
 
 
 def test_case_15_misplaced_sympathy_fails():
-    # 24b : simple demande d'annulation, sans mécontentement
     answer = (
         "Ashton Frederick, je comprends votre mécontentement. Un conseiller va prendre "
         "le relais dans cette conversation."
@@ -313,11 +295,7 @@ def test_case_15_misplaced_sympathy_fails():
     assert "contient : mécontentement" in failures(15, answer, C1_DATES)
 
 
-# Essai du 24b avec le prompt v6 (2026-11-12)
-
-
 def test_case_19_one_day_ago_passes():
-    # La commande 13 a été expédiée le 31 mai, la veille du 1er juin
     answer = (
         "Votre commande 13 a été expédiée il y a 1 jour. Je ne connais pas sa date de "
         "livraison."

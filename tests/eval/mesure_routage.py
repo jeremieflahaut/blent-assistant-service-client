@@ -23,9 +23,6 @@ CASES = Path(__file__).parent / "cas.json"
 CUSTOMER_SERVICE = "service_client"
 OFF_TOPIC = "hors_sujet"
 
-# Questions hors sujet en plus des cas 21 et 22, pour ne pas caler le seuil sur deux
-# questions seulement. Certaines sont des pièges proches du domaine (colis, commande,
-# calcul). Elles ne servent qu'à cette mesure : l'agent ne les joue pas.
 EXTRA_OFF_TOPIC = [
     "Quel temps fera-t-il demain à Paris ?",
     "Comment faire une tarte aux pommes ?",
@@ -39,7 +36,6 @@ EXTRA_OFF_TOPIC = [
     "Peux-tu résumer ce texte pour moi ?",
     "Je cherche un bon restaurant à Lyon",
     "Comment ouvrir un compte bancaire ?",
-    # Messages courts, pour choisir la longueur des relances courtes
     "Quelle heure est-il ?",
     "Qui es-tu ?",
     "Tu aimes le foot ?",
@@ -51,9 +47,6 @@ EXTRA_OFF_TOPIC = [
     "Ça va ?",
 ]
 
-# Messages du service client absents du jeu de test et jamais regardés pour ajuster les
-# phrases de référence : relances, accords, colère sans mot du domaine. Ils montrent ce
-# que la mesure sur cas.json ne montre pas (le routeur juge chaque message seul).
 EXTRA_CUSTOMER_SERVICE = [
     "Oui",
     "D'accord",
