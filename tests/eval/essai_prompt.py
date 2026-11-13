@@ -156,8 +156,8 @@ def write_report(path: Path, today: date, repeat: int, rows: list) -> None:
             "Sans appel d'outil", [t for t in turns if not t["tool_calls"]]
         ),
         "",
-        "Cas à plusieurs messages (29, 30) : joués dans une même conversation, seule "
-        "la dernière réponse est notée. Le ton n'est pas noté : voir les points "
+        "Cas à plusieurs messages : joués dans une même conversation, seule la "
+        "dernière réponse est notée. Le ton n'est pas noté : voir les points "
         "« À relire ».",
         "",
         "| Cas | Brief | Réussites | Échecs relevés |",
