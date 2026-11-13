@@ -106,14 +106,14 @@ OLLAMA_MODEL=ministral-3:3b ./run.sh
 ### Exemples de questions
 
 - **Information** : « Où en est ma commande ? », « Quand ma commande 51 a-t-elle été
-  livrée ? », « Est-ce que mes commandes sont payées ? », « Quand vais-je recevoir la
+  livrée ? », « Quel est l'état du paiement ? », « Quand vais-je recevoir la
   commande 37 ? » (date de livraison inconnue : le bot le dit, sans estimer).
 - **Exceptions** : « Où en est la commande 999 ? » (introuvable) ; avec Ashton Frederick,
   « Où en est la commande 13 ? » (elle appartient à Ramona Howell : même réponse
   « introuvable », son existence n'est pas révélée) ; n'importe quelle question avec
   Yoshio Swanson (aucune commande).
-- **Demande d'aide** : « Je veux annuler ma commande 22 » : le bot annonce qu'un conseiller
-  prend le relais, sans rien modifier.
+- **Demande d'aide** : « Puis-je modifier ou annuler ma commande ? », « Je veux annuler ma
+  commande 22 » : le bot annonce qu'un conseiller prend le relais, sans rien modifier.
 - **Client agressif** : « Elle arrive quand ma p*** de commande ?! »
 - **Hors sujet** : « Quelle est la capitale de l'Australie ? », « Aide-moi à écrire un mail à
   mon patron » : réponse fixe du routage sémantique, le modèle de chat n'est pas appelé.
@@ -276,7 +276,7 @@ l'accord entre `docs/templates-prompts.md` et les textes du code.
 uv run python -m tests.eval.essai_prompt --repeat 3
 ```
 
-Le jeu de test `tests/eval/cas.json` contient 31 cas classés selon les trois étapes du
+Le jeu de test `tests/eval/cas.json` contient 34 cas classés selon les trois étapes du
 projet, pour 5 clients de référence. Chaque réponse passe des vérifications automatiques
 (`tests/eval/verifs.py`) : aucun code de statut brut, toute date ou tout nombre cité existe
 dans les données du client, formulations attendues ou interdites. Chaque cas est joué
@@ -298,23 +298,29 @@ routeur. Le routage est mesuré à part, par `tests.eval.mesure_routage` (point 
 
 ### Résultat et mise au point du prompt
 
-**Résultat de référence** (`mistral-small3.2:24b`, prompt v7, 12 novembre 2026, rapport
-`tests/eval/resultats/essai-agent-20261112-0846.md`) : **31/31** sur chacun des 3 passages
-(cas exigés par le brief : 26/26), y compris les deux cas à plusieurs messages, joués dans
-une même conversation, et aucune information inventée dans les réponses relues. Un essai
+**Résultat de référence** (`mistral-small3.2:24b`, prompt v7, 13 novembre 2026, rapport
+`tests/eval/resultats/essai-agent-20261113-0819.md`) : **34/34** sur chacun des 3 passages
+(cas exigés par le brief : 29/29), y compris les trois cas à plusieurs messages, joués dans
+une même conversation, et aucune information inventée dans les réponses relues : chaque
+date citée a été comparée à la base, toutes sont rattachées à la bonne commande. Les quatre
+questions données en exemple par le brief y sont jouées mot pour mot (cas 1, 31, 32, 33),
+ainsi qu'une question hors sujet courte après une vraie question (cas 34, « 2 + 2 ? ») :
+elle passe le routeur comme relance courte, et le modèle la refuse. Un essai
 précédent avec le même prompt (rapport `essai-agent-20261112-0830.md`, dans l'historique
 git du dépôt) avait relevé un défaut intermittent au cas 6 (« Est-ce que
 mes commandes sont payées ? ») : 2 réponses sur 3 disaient « Oui… toutes livrées » sans le
 mot « payées ».
 
 **Temps jusqu'au premier mot** (même rapport, réponse diffusée comme dans l'application,
-GPU de la sandbox, modèle déjà chargé) : médiane **0,4 s** et maximum 1,0 s quand le modèle
-consulte les commandes ; moins de 0,1 s en médiane et 0,6 s au maximum sans appel d'outil.
-Les 99 réponses mesurées tiennent l'objectif de moins de 2 s. Un indicateur d'attente
-s'affiche de toute façon dès l'envoi de la question. Ces mesures datent d'avant le routage
-sémantique, qui ajoute environ 10 ms par question (mesuré dans la sandbox le 13 novembre
-2026, modèle d'embedding chargé) : l'objectif de moins de 2 s reste tenu, sauf au premier
-message, où les modèles se chargent en mémoire (environ 4 s pour celui d'embedding).
+GPU de la sandbox, modèle déjà chargé) : médiane **0,8 s** et maximum 2,2 s quand le modèle
+consulte les commandes ; 0,1 s en médiane et 1,3 s au maximum sans appel d'outil. 110
+réponses sur 111 tiennent l'objectif de moins de 2 s ; la seule au-delà (2,2 s, cas 6) a
+consulté les commandes. L'essai précédent, dans une autre sandbox (le matériel change d'une
+session à l'autre), donnait une médiane de 0,4 s. Un indicateur d'attente s'affiche de toute
+façon dès l'envoi de la question. L'essai joue l'agent sans le routage sémantique, qui
+ajoute environ 10 ms par question (mesuré dans la sandbox le 13 novembre 2026, modèle
+d'embedding chargé). Au premier message, les modèles se chargent en mémoire : environ 4 s
+pour celui d'embedding.
 
 Le prompt a d'abord été écrit sans exemple. Une règle ou un exemple n'a été ajouté que pour
 corriger un défaut observé lors d'un essai :
