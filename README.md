@@ -65,8 +65,8 @@ application. Derrière un vrai nom de domaine, on les réactiverait.
 
 **Prérequis** : Linux, Python 3.11, `curl`, un GPU NVIDIA. `mistral-small3.2:24b` occupe environ
 15 Go de mémoire GPU avec un contexte de 8 192 tokens (mesuré dans la sandbox avec
-`ollama ps`), plus environ 0,6 Go pour le modèle d'embedding. La première réponse est plus
-lente : Ollama charge les modèles en mémoire.
+`ollama ps`), plus 173 Mo pour le modèle d'embedding. La première réponse est plus lente :
+Ollama charge les modèles en mémoire.
 
 ## Configuration
 
@@ -211,7 +211,8 @@ app.py (Streamlit) ── question ──▶ routage sémantique (router.py, emb
       modèle des cours (`paraphrase-multilingual-MiniLM-L12-v2`, vecteurs de 384 nombres).
       Ce dernier n'est pas proposé par Ollama, et le charger avec `sentence-transformers`
       installerait torch dans l'environnement. Un appel prend environ 10 ms une fois le
-      modèle chargé.
+      modèle chargé (mesuré en local et dans la sandbox) ; au premier message, le
+      chargement prend environ 4 s.
     - **Seuil mesuré** (`uv run python -m tests.eval.mesure_routage`) sur les messages du
       jeu de test et 21 questions hors sujet supplémentaires, dont des pièges proches du
       domaine (« Écris-moi un poème sur les colis », « Combien font 12 fois 7 ? ») et des
@@ -302,8 +303,8 @@ GPU de la sandbox, modèle déjà chargé) : médiane **0,4 s** et maximum 1,0 s
 consulte les commandes ; moins de 0,1 s en médiane et 0,6 s au maximum sans appel d'outil.
 Les 99 réponses mesurées tiennent l'objectif de moins de 2 s. Un indicateur d'attente
 s'affiche de toute façon dès l'envoi de la question. Ces mesures datent d'avant le routage
-sémantique, qui ajoute un appel au modèle d'embedding (environ 10 ms en local, modèle
-chargé) : à mesurer de nouveau dans la sandbox.
+sémantique, qui ajoute environ 10 ms par question (mesuré dans la sandbox le 13 novembre
+2026, modèle d'embedding chargé) : l'objectif de moins de 2 s reste tenu.
 
 Le prompt a d'abord été écrit sans exemple. Une règle ou un exemple n'a été ajouté que pour
 corriger un défaut observé lors d'un essai :
