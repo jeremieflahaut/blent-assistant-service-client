@@ -2,7 +2,7 @@
 
 Chaque cas de cas.json est joué comme dans l'application : une conversation avec
 mémoire, la réponse diffusée au fil de la génération (agent.stream_reply). L'agent
-décide lui-même d'appeler l'outil ou non. Les cas à plusieurs messages (29, 30)
+décide lui-même d'appeler l'outil ou non. Les cas à plusieurs messages (29, 30, 34)
 enchaînent leurs messages dans la même conversation ; seule la dernière réponse est
 notée. Chaque réponse notée passe les vérifications automatiques du cas
 (tests/eval/verifs.py) ; le rapport Markdown (tests/eval/resultats/) donne le score, le

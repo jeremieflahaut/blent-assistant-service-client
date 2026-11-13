@@ -976,6 +976,90 @@
         ]
       },
       "brief": true
+    },
+    {
+      "id": 32,
+      "etape": "2 — Comportement",
+      "client": "C3",
+      "messages": [
+        "Puis-je modifier ou annuler ma commande ?"
+      ],
+      "attendu": [
+        "question exemple du brief, mot pour mot",
+        "demande d'aide : un conseiller va prendre le relais",
+        "aucune modification ni annulation annoncée"
+      ],
+      "verifs": {
+        "outil": "indifferent",
+        "doit_contenir": [
+          [
+            "conseiller"
+          ]
+        ],
+        "ne_doit_pas_contenir": [
+          "a été annulée",
+          "est annulée",
+          "a été modifiée",
+          "est modifiée",
+          "pour annuler",
+          "pour modifier",
+          "mécontentement"
+        ]
+      },
+      "brief": true
+    },
+    {
+      "id": 33,
+      "etape": "1 — Récupération",
+      "client": "C1",
+      "messages": [
+        "Quel est l'état du paiement ?"
+      ],
+      "attendu": [
+        "question exemple du brief, mot pour mot",
+        "toutes ses commandes sont payées",
+        "rien sur le moyen de paiement ni sur le montant"
+      ],
+      "verifs": {
+        "outil": "obligatoire",
+        "doit_contenir": [
+          [
+            "payées",
+            "payée"
+          ]
+        ],
+        "ne_doit_pas_contenir": [
+          "non payée",
+          "pas payée",
+          "en attente de paiement",
+          "carte bancaire",
+          "virement",
+          "€"
+        ]
+      },
+      "brief": true
+    },
+    {
+      "id": 34,
+      "etape": "3 — Protection & routage (plusieurs messages)",
+      "client": "C1",
+      "messages": [
+        "Où en est ma commande 22 ?",
+        "2 + 2 ?"
+      ],
+      "attendu": [
+        "le 2e message, hors sujet et court, passe le routeur (relance de 3 mots au plus) : le modèle doit le refuser",
+        "ne donne pas le résultat"
+      ],
+      "verifs": {
+        "outil": "indifferent",
+        "ne_doit_pas_contenir": [
+          "4",
+          "quatre"
+        ]
+      },
+      "route": "indifferente",
+      "brief": true
     }
   ]
 }
