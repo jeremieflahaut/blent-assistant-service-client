@@ -7,10 +7,22 @@ commandes** (statut, expédition, livraison, paiement), en interrogeant en temps
 SQLite. Routage sémantique par embeddings en amont, agent LangChain, modèle open-weights
 (Mistral Small 3.2) servi par Ollama, interface Streamlit.
 
-Les prompts du projet (livrable « Templates de prompts ») sont réunis dans
-[`docs/templates-prompts.md`](docs/templates-prompts.md).
-
 Projet n°3 — formation Blent LLM Engineer.
+
+## Livrable de l'étape 3 : templates de prompts
+
+Le livrable « Templates de prompts » est déposé dans ce dépôt :
+**[`docs/templates-prompts.md`](docs/templates-prompts.md)**. Il réunit, dans l'ordre où une
+question du client les traverse :
+
+1. le routage sémantique : phrases de référence, seuil, règle des relances courtes et
+   réponse fixe aux questions hors sujet ;
+2. le prompt système du modèle de chat, avec ses variables (prénom, nom, date du jour) ;
+3. la description de l'outil de consultation des commandes, envoyée au modèle ;
+4. le format du résultat de cet outil, avec un exemple.
+
+Les textes sont ceux du code (`router.py`, `prompts.py`, `agent.py`) : un test vérifie que
+le fichier ne s'en écarte pas.
 
 ## Démarrage (Cloud Sandbox Blent)
 
